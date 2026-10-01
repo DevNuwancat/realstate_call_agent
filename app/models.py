@@ -31,3 +31,7 @@ class TemplateIn(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=20000)
     first_message: str = Field("", max_length=1000)
     agent_name: str = Field("Noor", max_length=40)
+
+
+class VoiceSettingsIn(BaseModel):
+    backchanneling: bool

@@ -139,6 +139,11 @@ button{font-family:inherit;color:inherit}
 .fld>label{font-size:12px;font-weight:600;color:var(--text);letter-spacing:.01em}
 .fld{position:relative}
 .fld>label{display:flex;align-items:center;gap:8px}
+.sw{display:flex;align-items:center;gap:10px;flex:none;font-size:13px;color:var(--text);cursor:pointer;background:none;border:0;padding:0;text-align:left;font-family:inherit}
+.sw .tg{width:36px;height:20px;border-radius:999px;background:var(--track);position:relative;flex:none;transition:background .2s}
+.sw .tg:after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw[aria-checked=true] .tg{background:var(--green)}
+.sw[aria-checked=true] .tg:after{transform:translateX(16px)}
 .info{width:18px;height:18px;border-radius:50%;border:1px solid var(--muted);background:transparent;color:var(--muted);font:600 11px 'DM Sans';line-height:1;padding:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .info:hover,.info.on{color:var(--text);border-color:var(--text)}
 .fld-tip{font-size:12.5px;line-height:1.5;color:var(--muted2);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
@@ -868,6 +873,7 @@ button{font-family:inherit;color:inherit}
       '<div class="fld"><label for="tpl-agent">Agent name</label><input class="tpl-name" id="tpl-agent" placeholder="e.g. Noor" maxlength="40" disabled></div>' +
       '<div class="fld"><label for="tpl-first">First message <button type="button" class="info" id="tpl-info" aria-label="How it works">!</button></label><div class="fld-tip" id="tpl-tip" hidden>Type <b>@</b> to insert the <b>Agent name</b> or the <b>Lead name</b>. They’re filled in automatically on every call.</div><textarea id="tpl-first" class="tpl-first" placeholder="Hi @Lead name, this is @Agent name…" maxlength="1000" disabled></textarea></div>' +
       '<div class="fld"><label for="prompt-text">Script</label><textarea id="prompt-text" placeholder="Loading…" disabled></textarea></div>' +
+      '<button type="button" class="sw" id="sw-bc" role="switch" aria-checked="false" disabled><span class="tg"></span>Natural “mm-hmm” while listening</button>' +
       '<div class="tpl-status" id="tpl-status"></div>' +
       '<div class="msg-note" id="prompt-note"></div>' +
       '<div class="tpl-actions"><button class="btn-wide btn-sec" id="tpl-save" disabled>Save template</button><button class="btn-wide" id="tpl-use" disabled>Use for calls</button></div>' +
@@ -881,6 +887,13 @@ button{font-family:inherit;color:inherit}
       return;
     }
     var active = P.list.filter(function (t) { return t.active; })[0] || P.list[0];
+    api("/settings/voice").then(function (v) { var b = $("sw-bc"); if (!b) return; b.setAttribute("aria-checked", v.backchanneling ? "true" : "false"); b.disabled = false; }).catch(function () {});
+    $("sw-bc").onclick = async function () {
+      var b = this, on = b.getAttribute("aria-checked") !== "true"; b.disabled = true;
+      try { await api("/settings/voice", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ backchanneling: on }) }); b.setAttribute("aria-checked", on ? "true" : "false"); tplNote(on ? "“mm-hmm” is on for new calls ✓" : "“mm-hmm” is off", "ok"); }
+      catch (e) { tplNote("Couldn’t change it. Please try again.", "err"); }
+      b.disabled = false;
+    };
     attachMention($("tpl-first")); attachMention($("prompt-text"));
     $("tpl-info").onclick = function () { var t = $("tpl-tip"); t.hidden = !t.hidden; this.classList.toggle("on", !t.hidden); };
     $("tpl-name").disabled = false; $("prompt-text").disabled = false; $("tpl-agent").disabled = false; $("tpl-first").disabled = false;

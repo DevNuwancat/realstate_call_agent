@@ -7,9 +7,9 @@ from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.models import StartCallRequest, TemplateIn
+from app.models import StartCallRequest, TemplateIn, VoiceSettingsIn
 from app.supabase_client import supabase
-from app.vapi_client import start_outbound_call, get_system_prompt, get_first_message, set_system_prompt, fill_agent_name, get_call as fetch_vapi_call, spend_since
+from app.vapi_client import start_outbound_call, get_system_prompt, get_first_message, get_backchanneling, set_backchanneling, set_system_prompt, fill_agent_name, get_call as fetch_vapi_call, spend_since
 
 app = FastAPI(title="Real Estate Call Agent API")
 
@@ -195,6 +195,23 @@ def _templates():
 
 def _db_failure():
     return HTTPException(status_code=503, detail=TEMPLATES_SETUP_HINT)
+
+
+@app.get("/settings/voice")
+async def get_voice_settings():
+    try:
+        return {"backchanneling": await get_backchanneling()}
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Could not read the agent settings")
+
+
+@app.put("/settings/voice")
+async def put_voice_settings(body: VoiceSettingsIn):
+    try:
+        await set_backchanneling(body.backchanneling)
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Could not update the agent")
+    return {"backchanneling": body.backchanneling}
 
 
 @app.get("/templates")
