@@ -136,6 +136,23 @@ button{font-family:inherit;color:inherit}
 .panel.prompt p{margin:0;font-size:13px;color:var(--muted)}
 .panel.prompt textarea{flex:1;min-height:200px;border:1px solid var(--line);background:var(--card2);border-radius:16px;padding:16px;font:13px/1.65 var(--mono);color:var(--text);resize:none;outline:none}
 .panel.prompt textarea:focus{border-color:rgba(255,107,61,.5)}
+.tpl-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;flex:none;-webkit-overflow-scrolling:touch}
+.tpl{border:0;border-radius:999px;padding:8px 14px;font:500 12px 'DM Sans';background:var(--chip);color:var(--muted2);white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:7px;flex:none}
+.tpl:hover{background:#262628}
+.tpl.on{background:var(--text);color:var(--bg)}
+.tpl .d{width:7px;height:7px;border-radius:50%;background:var(--green);flex:none}
+.tpl.add{border:1px dashed rgba(255,255,255,.22);background:transparent;color:var(--accent)}
+.tpl.add.on{background:rgba(255,107,61,.14)}
+.tpl-name{border:1px solid var(--line);background:var(--card2);border-radius:14px;padding:12px 16px;font:500 14px 'DM Sans';color:var(--text);outline:none;flex:none}
+.tpl-name:focus{border-color:rgba(255,107,61,.5)}
+.tpl-status{font-size:12px;color:var(--muted);flex:none;display:flex;align-items:center;gap:7px}
+.tpl-status.live{color:var(--green)}
+.tpl-actions{display:flex;gap:10px;flex:none}
+.tpl-actions .btn-wide{flex:1;padding:13px 10px}
+.btn-sec{border:1px solid rgba(255,255,255,.14)!important;background:transparent!important;color:var(--text)!important}
+.btn-sec:hover{background:var(--chip)!important}
+.tpl-del{align-self:flex-start;flex:none}
+.tpl-del:disabled{opacity:.4;cursor:default}
 .btn-wide{border:0;background:var(--accent);color:var(--bg);border-radius:14px;padding:14px;font:600 14px 'DM Sans';cursor:pointer}
 .btn-wide:hover{background:var(--accent-hover)} .btn-wide:disabled{opacity:.6;cursor:default}
 .xbtn{width:32px;height:32px;border-radius:50%;background:var(--track);display:grid;place-items:center;cursor:pointer;font-size:13px;border:0;flex:none}
@@ -735,35 +752,120 @@ button{font-family:inherit;color:inherit}
     }
   }
 
-  /* ================= agent script panel ================= */
+  /* ================= agent script panel (templates) ================= */
+  var P = { list: [], sel: null, busy: false };   // sel = template id, or null while writing a new one
+  var NEW_TEXT = "You are a friendly assistant making a short phone call.\n\nGoals:\n1. \n2. \n\nStyle: short sentences, never pushy. If the person isn’t interested, thank them politely and end the call.";
+
+  function tplById(id) { return P.list.filter(function (t) { return t.id === id; })[0]; }
+  function tplNote(msg, kind) { var n = $("prompt-note"); if (n) { n.textContent = msg || ""; n.className = "msg-note" + (kind ? " " + kind : ""); } }
+
+  function renderTemplates() {
+    var row = $("tpl-row"); if (!row) return;
+    row.innerHTML = P.list.map(function (t) {
+      return '<button class="tpl' + (t.id === P.sel ? " on" : "") + '" data-tpl="' + esc(t.id) + '">' + (t.active ? '<span class="d"></span>' : "") + esc(t.name) + "</button>";
+    }).join("") + '<button class="tpl add' + (P.sel === null ? " on" : "") + '" data-tpl="">+ New template</button>';
+    var t = tplById(P.sel);
+    var st = $("tpl-status");
+    st.className = "tpl-status" + (t && t.active ? " live" : "");
+    st.textContent = P.sel === null ? "New template — not saved yet" : t && t.active ? "● Active — the agent uses this script for new calls" : "Not active — press “Use for calls” to switch the agent to this script";
+    $("tpl-use").textContent = t && t.active ? "Save & keep active" : "Use for calls";
+    $("tpl-del").style.display = P.sel === null ? "none" : "";
+    $("tpl-del").disabled = !!(t && t.active);
+    $("tpl-del").title = t && t.active ? "Switch to another template before deleting this one" : "";
+    $("tpl-del").textContent = "Delete template"; $("tpl-del").dataset.armed = "";
+  }
+
+  function showTemplate(id) {
+    P.sel = id;
+    var t = tplById(id);
+    $("tpl-name").value = t ? t.name : "";
+    $("prompt-text").value = t ? t.prompt : NEW_TEXT;
+    tplNote("");
+    renderTemplates();
+  }
+
+  function setTplBusy(b) {
+    P.busy = b;
+    ["tpl-save", "tpl-use", "tpl-del"].forEach(function (id) { var e = $(id); if (e) e.disabled = b || (id === "tpl-del" && !!(tplById(P.sel) && tplById(P.sel).active)); });
+  }
+
+  // Saves the editor (create or update). Returns the saved template.
+  async function saveTemplate() {
+    var name = $("tpl-name").value.trim(), prompt = $("prompt-text").value.trim();
+    if (!name) throw new Error("Give the template a name.");
+    if (!prompt) throw new Error("The script can’t be empty.");
+    var body = JSON.stringify({ name: name, prompt: prompt }), h = { "Content-Type": "application/json" };
+    var saved = P.sel === null
+      ? await api("/templates", { method: "POST", headers: h, body: body })
+      : await api("/templates/" + encodeURIComponent(P.sel), { method: "PUT", headers: h, body: body });
+    var idx = P.list.findIndex(function (t) { return t.id === saved.id; });
+    if (idx >= 0) P.list[idx] = saved; else P.list.push(saved);
+    P.sel = saved.id;
+    return saved;
+  }
+
   async function openPrompt() {
-    stopAudio(); S.openCallId = null; S.promptOpen = true;
+    stopAudio(); S.openCallId = null; S.promptOpen = true; P.sel = null; P.list = [];
     root.innerHTML =
       '<div class="scrim" data-close></div>' +
       '<div class="panel prompt" role="dialog" aria-label="Agent script"><div style="display:flex;align-items:center;gap:12px"><h3 style="flex:1">Agent script</h3><button class="xbtn" data-close aria-label="Close">✕</button></div>' +
-      "<p>System prompt for the agent’s personality and call flow. Changes apply to the next call.</p>" +
-      '<textarea id="prompt-text" placeholder="Loading current prompt…" disabled></textarea>' +
+      "<p>Pick a template or write your own. The one marked with a green dot is the script the agent uses for new calls.</p>" +
+      '<div class="tpl-row" id="tpl-row"><div class="shim" style="height:34px;width:140px;border-radius:999px"></div></div>' +
+      '<input class="tpl-name" id="tpl-name" placeholder="Template name" maxlength="80" disabled>' +
+      '<textarea id="prompt-text" placeholder="Loading…" disabled></textarea>' +
+      '<div class="tpl-status" id="tpl-status"></div>' +
       '<div class="msg-note" id="prompt-note"></div>' +
-      '<button class="btn-wide" id="prompt-save" disabled>Save changes</button></div>';
-    var ta = $("prompt-text"), note = $("prompt-note"), save = $("prompt-save");
+      '<div class="tpl-actions"><button class="btn-wide btn-sec" id="tpl-save" disabled>Save template</button><button class="btn-wide" id="tpl-use" disabled>Use for calls</button></div>' +
+      '<button class="btn-del tpl-del" id="tpl-del" style="display:none">Delete template</button></div>';
     try {
-      var data = await api("/assistant/prompt");
+      P.list = await api("/templates");
       if (!S.promptOpen) return;
-      ta.value = data.prompt || ""; ta.disabled = false; save.disabled = false;
     } catch (e) {
-      note.textContent = "Could not load the script. Please try again."; note.className = "msg-note err";
+      $("tpl-row").innerHTML = "";
+      tplNote(/not set up/i.test(e.message) ? "Templates aren’t set up yet — ask your developer to finish the database setup." : "Could not load the templates. Please try again.", "err");
       return;
     }
-    save.onclick = async function () {
-      var text = ta.value.trim();
-      if (!text) { note.textContent = "The script can’t be empty."; note.className = "msg-note err"; return; }
-      save.disabled = true; save.textContent = "Saving…"; note.textContent = "";
+    var active = P.list.filter(function (t) { return t.active; })[0] || P.list[0];
+    $("tpl-name").disabled = false; $("prompt-text").disabled = false;
+    ["tpl-save", "tpl-use"].forEach(function (id) { $(id).disabled = false; });
+    showTemplate(active ? active.id : null);
+
+    $("tpl-row").onclick = function (e) {
+      var b = e.target.closest("[data-tpl]"); if (!b || P.busy) return;
+      showTemplate(b.dataset.tpl || null);
+    };
+    $("tpl-save").onclick = async function () {
+      setTplBusy(true); tplNote("");
+      try { await saveTemplate(); renderTemplates(); tplNote("Template saved ✓", "ok"); }
+      catch (e) { tplNote(e.message || "Couldn’t save. Please try again.", "err"); }
+      setTplBusy(false); renderTemplates();
+    };
+    $("tpl-use").onclick = async function () {
+      setTplBusy(true); tplNote("Updating the agent…");
       try {
-        await api("/assistant/prompt", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: text }) });
-        save.textContent = "Saved ✓"; note.textContent = ""; setTimeout(function () { if (save.isConnected) { save.textContent = "Save changes"; save.disabled = false; } }, 1800);
-      } catch (e) {
-        save.textContent = "Save changes"; save.disabled = false; note.textContent = "Couldn’t save your changes. Please try again."; note.className = "msg-note err";
+        var saved = await saveTemplate();
+        var live = await api("/templates/" + encodeURIComponent(saved.id) + "/activate", { method: "POST" });
+        P.list = P.list.map(function (t) { return Object.assign({}, t, { active: t.id === live.id }); });
+        P.list = P.list.map(function (t) { return t.id === live.id ? live : t; });
+        renderTemplates(); tplNote("The agent will use this script on its next call ✓", "ok");
+      } catch (e) { tplNote(e.message || "Couldn’t update the agent. Please try again.", "err"); }
+      setTplBusy(false); renderTemplates();
+    };
+    $("tpl-del").onclick = async function () {
+      var btn = $("tpl-del"), id = P.sel; if (!id) return;
+      if (btn.dataset.armed !== "1") {
+        btn.dataset.armed = "1"; btn.textContent = "Click again to confirm";
+        setTimeout(function () { if (btn.isConnected) { btn.dataset.armed = ""; btn.textContent = "Delete template"; } }, 4000);
+        return;
       }
+      setTplBusy(true);
+      try {
+        await api("/templates/" + encodeURIComponent(id), { method: "DELETE" });
+        P.list = P.list.filter(function (t) { return t.id !== id; });
+        var next = P.list.filter(function (t) { return t.active; })[0] || P.list[0];
+        showTemplate(next ? next.id : null); tplNote("Template deleted");
+      } catch (e) { tplNote(e.message || "Couldn’t delete.", "err"); }
+      setTplBusy(false); renderTemplates();
     };
   }
 

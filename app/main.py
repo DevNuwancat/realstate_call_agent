@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.models import StartCallRequest
+from app.models import StartCallRequest, TemplateIn
 from app.supabase_client import supabase
 from app.vapi_client import start_outbound_call, get_system_prompt, set_system_prompt, get_call as fetch_vapi_call
 
@@ -180,6 +180,107 @@ async def update_prompt(body: dict):
         raise HTTPException(status_code=400, detail="prompt cannot be empty")
     await set_system_prompt(new_prompt)
     return {"updated": True}
+
+
+# ---------------------------------------------------------------------------
+# Call script templates (saved system prompts; one is "active" = the live script)
+# ---------------------------------------------------------------------------
+
+TEMPLATES_SETUP_HINT = "Templates are not set up yet. Run the script_templates SQL in Supabase."
+
+
+def _templates():
+    return supabase.table("script_templates")
+
+
+def _db_failure():
+    return HTTPException(status_code=503, detail=TEMPLATES_SETUP_HINT)
+
+
+@app.get("/templates")
+async def list_templates():
+    try:
+        rows = _templates().select("*").order("created_at").execute().data
+        if not rows:
+            # First time: save the agent's current live script as the default template.
+            try:
+                current = await get_system_prompt()
+            except httpx.HTTPError:
+                raise HTTPException(status_code=502, detail="Could not read the current script")
+            _templates().insert({"name": "Default template", "prompt": current or " ", "active": True}).execute()
+            rows = _templates().select("*").order("created_at").execute().data
+        return rows
+    except HTTPException:
+        raise
+    except Exception:
+        raise _db_failure()
+
+
+@app.post("/templates")
+async def create_template(body: TemplateIn):
+    try:
+        res = _templates().insert({"name": body.name.strip(), "prompt": body.prompt, "active": False}).execute()
+        return res.data[0]
+    except Exception:
+        raise _db_failure()
+
+
+@app.put("/templates/{template_id}")
+async def update_template(template_id: str, body: TemplateIn):
+    try:
+        res = _templates().update({
+            "name": body.name.strip(),
+            "prompt": body.prompt,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }).eq("id", template_id).execute()
+    except Exception:
+        raise _db_failure()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Template not found")
+    row = res.data[0]
+    if row.get("active"):
+        # Editing the live template changes the live script too.
+        try:
+            await set_system_prompt(body.prompt)
+        except httpx.HTTPError:
+            raise HTTPException(status_code=502, detail="Saved, but could not update the live agent")
+    return row
+
+
+@app.post("/templates/{template_id}/activate")
+async def activate_template(template_id: str):
+    try:
+        found = _templates().select("*").eq("id", template_id).execute().data
+    except Exception:
+        raise _db_failure()
+    if not found:
+        raise HTTPException(status_code=404, detail="Template not found")
+    try:
+        await set_system_prompt(found[0]["prompt"])      # update the agent first; only then flip the flags
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Could not update the agent")
+    try:
+        _templates().update({"active": False}).eq("active", True).execute()
+        res = _templates().update({"active": True}).eq("id", template_id).execute()
+        return res.data[0]
+    except Exception:
+        raise _db_failure()
+
+
+@app.delete("/templates/{template_id}")
+async def delete_template(template_id: str):
+    try:
+        found = _templates().select("*").eq("id", template_id).execute().data
+        if not found:
+            raise HTTPException(status_code=404, detail="Template not found")
+        if found[0].get("active"):
+            raise HTTPException(status_code=400, detail="Switch to another template before deleting the active one")
+        _templates().delete().eq("id", template_id).execute()
+        return {"deleted": True}
+    except HTTPException:
+        raise
+    except Exception:
+        raise _db_failure()
 
 
 @app.get("/usage")

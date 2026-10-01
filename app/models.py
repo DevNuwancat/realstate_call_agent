@@ -24,3 +24,8 @@ class CallRecord(BaseModel):
     recording_url: Optional[str] = None
     duration_seconds: Optional[int] = None
     raw_payload: Optional[dict[str, Any]] = None
+
+
+class TemplateIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=80)
+    prompt: str = Field(..., min_length=1, max_length=20000)

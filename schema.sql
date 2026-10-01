@@ -15,3 +15,16 @@ create table if not exists calls (
 );
 
 create index if not exists calls_created_at_idx on calls (created_at desc);
+
+
+-- Call script templates (the agent's system prompt). One row is "active" = the live script.
+create table if not exists script_templates (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  prompt text not null,
+  active boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table script_templates enable row level security;
