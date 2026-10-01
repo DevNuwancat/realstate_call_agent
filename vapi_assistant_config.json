@@ -1,0 +1,50 @@
+{
+  "name": "Real Estate Interest Call Agent",
+  "firstMessage": "Hi {{lead_name}}, this is Mahmoud calling about the property you enquired about — do you have a couple of minutes to chat?",
+  "model": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-5",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a warm, human-sounding real estate assistant making a short qualifying phone call. Your goal in under 3 minutes: (1) confirm the lead still has interest in the property/area they enquired about, (2) find out their budget range, timeline, and must-haves, (3) gauge urgency, (4) end politely, telling them an agent will follow up. Speak naturally, use brief sentences, allow pauses, and never sound scripted. Do not make promises about pricing or availability — you are gauging interest only, not closing. If they are not interested, thank them and end the call quickly rather than pushing."
+      }
+    ]
+  },
+  "voice": {
+    "provider": "11labs",
+    "voiceId": "iP95p4xoKVk53GoZ742B"
+  },
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "nova-2",
+    "language": "en"
+  },
+  "recordingEnabled": true,
+  "maxDurationSeconds": 240,
+  "endCallFunctionEnabled": true,
+  "analysisPlan": {
+    "summaryPlan": {
+      "enabled": true
+    },
+    "structuredDataPlan": {
+      "enabled": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "interest_level": {
+            "type": "string",
+            "enum": ["hot", "warm", "cold", "not-interested"]
+          },
+          "budget_range": { "type": "string" },
+          "timeline": { "type": "string" },
+          "notes": { "type": "string" }
+        },
+        "required": ["interest_level"]
+      }
+    }
+  },
+  "server": {
+    "url": "https://YOUR-RENDER-BACKEND-URL.onrender.com/webhooks/vapi"
+  }
+}

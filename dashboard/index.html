@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Real Estate Call Agent — Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #171a21;
+    --border: #262b35;
+    --text: #e8eaed;
+    --muted: #9aa3b2;
+    --accent: #4f8cff;
+    --hot: #ff5c5c;
+    --warm: #ffb648;
+    --cold: #5cc8ff;
+    --not: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  h1 { font-size: 20px; margin: 0; }
+  #config {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  #config input {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 6px;
+    width: 260px;
+  }
+  #refresh-btn {
+    background: var(--accent);
+    border: none;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  #status-line { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .lead-name { font-weight: 600; font-size: 15px; }
+  .phone { color: var(--muted); font-size: 12px; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    text-transform: capitalize;
+    white-space: nowrap;
+  }
+  .badge.status { background: #26304a; color: #9db4ff; }
+  .badge.interest-hot { background: #4a1f22; color: var(--hot); }
+  .badge.interest-warm { background: #4a3a1f; color: var(--warm); }
+  .badge.interest-cold { background: #1f3a4a; color: var(--cold); }
+  .badge.interest-not-interested { background: #2a2d33; color: var(--not); }
+  .delete-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+  }
+  .delete-btn:hover { background: #4a1f22; color: var(--hot); border-color: var(--hot); }
+
+  .bubbles {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    height: 20px;
+  }
+  .bubbles.active { display: inline-flex; }
+  .bubbles span {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: bubble-bounce 1.1s infinite ease-in-out;
+  }
+  .bubbles span:nth-child(1) { animation-delay: 0s; }
+  .bubbles span:nth-child(2) { animation-delay: 0.15s; }
+  .bubbles span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bubble-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-8px); opacity: 1; }
+  }
+
+  .usage-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    max-width: 420px;
+  }
+  .usage-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .usage-top input {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    width: 50px;
+    text-align: right;
+    font-size: 12px;
+  }
+  .usage-track {
+    background: #10131a;
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+  }
+  .usage-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent);
+    transition: width 0.4s ease, background 0.4s ease;
+  }
+  .usage-fill.warn { background: var(--warm); }
+  .usage-fill.danger { background: var(--hot); }
+
+  .prompt-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+    max-width: 700px;
+  }
+  .prompt-box summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .prompt-box textarea {
+    width: 100%;
+    min-height: 140px;
+    margin-top: 12px;
+    background: #10131a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px;
+    font-size: 13px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .prompt-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .prompt-actions button {
+    background: var(--accent);
+    border: none;
+    color: white;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .prompt-actions button:disabled { opacity: 0.5; cursor: default; }
+  #prompt-status { font-size: 12px; color: var(--muted); }
+  .summary { font-size: 13px; color: var(--text); margin: 10px 0; line-height: 1.4; }
+  .summary.empty { color: var(--muted); font-style: italic; }
+  audio { width: 100%; margin: 8px 0; height: 32px; }
+  details summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 6px;
+  }
+  .transcript {
+    white-space: pre-wrap;
+    font-size: 12px;
+    color: var(--muted);
+    background: #10131a;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+  .empty-state { color: var(--muted); padding: 40px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Real Estate Call Agent — Call Log</h1>
+  <div id="config">
+    Backend URL:
+    <input id="backend-url" type="text" placeholder="https://your-backend.onrender.com" />
+    <button id="refresh-btn">Refresh</button>
+  </div>
+</header>
+
+<details class="prompt-box">
+  <summary>Edit the agent's personality / script (system prompt)</summary>
+  <textarea id="prompt-text" placeholder="Loading current prompt…"></textarea>
+  <div class="prompt-actions">
+    <button id="prompt-save-btn">Save to Vapi</button>
+    <span id="prompt-status"></span>
+  </div>
+</details>
+
+<div class="usage-box">
+  <div class="usage-top">
+    <span>Prototype spend so far</span>
+    <span>$<span id="usage-spent">0.00</span> / $<input id="usage-budget" type="number" value="10" min="0.1" step="0.5" /></span>
+  </div>
+  <div class="usage-track"><div id="usage-fill" class="usage-fill" style="width:0%"></div></div>
+</div>
+
+<div style="margin-bottom: 20px; display:flex; align-items:center; gap:12px;">
+  <button id="talk-btn" style="background:#22c55e;border:none;color:white;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">
+    Talk to the agent
+  </button>
+  <div id="bubbles" class="bubbles"><span></span><span></span><span></span></div>
+  <span id="talk-status" style="font-size:13px;color:#9aa3b2;"></span>
+</div>
+
+<div id="status-line">Loading…</div>
+<div id="calls" class="grid"></div>
+
+<script type="module">
+  import VapiModule from "https://cdn.jsdelivr.net/npm/@vapi-ai/web@2.7.1/+esm";
+  const Vapi = VapiModule.default || VapiModule;
+
+  const VAPI_PUBLIC_KEY = "b822df8b-1478-4d9f-926b-44ade85e9ece";
+  const VAPI_ASSISTANT_ID = "807802f9-e4e2-4e56-a50b-af024ed71260";
+
+  const vapi = new Vapi(VAPI_PUBLIC_KEY);
+  const talkBtn = document.getElementById("talk-btn");
+  const talkStatus = document.getElementById("talk-status");
+  const bubbles = document.getElementById("bubbles");
+  let callActive = false;
+
+  talkBtn.addEventListener("click", () => {
+    if (callActive) {
+      vapi.stop();
+      return;
+    }
+    talkStatus.textContent = "Connecting…";
+    vapi.start(VAPI_ASSISTANT_ID);
+  });
+
+  vapi.on("call-start", () => {
+    callActive = true;
+    talkBtn.textContent = "End call";
+    talkBtn.style.background = "#ef4444";
+    talkStatus.textContent = "Call in progress…";
+    bubbles.classList.add("active");
+  });
+
+  vapi.on("call-end", () => {
+    callActive = false;
+    talkBtn.textContent = "Talk to the agent";
+    talkBtn.style.background = "#22c55e";
+    talkStatus.textContent = "Call ended — refreshing…";
+    bubbles.classList.remove("active");
+    pollAfterCallEnd();
+  });
+
+  vapi.on("error", (e) => {
+    talkStatus.textContent = "Error: " + (e?.message || "could not start call");
+    bubbles.classList.remove("active");
+  });
+
+  const DEFAULT_BACKEND_URL = "http://localhost:8000";
+  const backendInput = document.getElementById("backend-url");
+  const statusLine = document.getElementById("status-line");
+  const callsEl = document.getElementById("calls");
+
+  function getBackendUrl() {
+    return (localStorage.getItem("backendUrl") || DEFAULT_BACKEND_URL).replace(/\/$/, "");
+  }
+
+  backendInput.value = getBackendUrl();
+  backendInput.addEventListener("change", () => {
+    localStorage.setItem("backendUrl", backendInput.value.trim());
+    loadCalls();
+  });
+  document.getElementById("refresh-btn").addEventListener("click", loadCalls);
+
+  function interestBadgeClass(level) {
+    if (!level) return "";
+    return "interest-" + level;
+  }
+
+  function renderCall(call) {
+    const name = call.lead_name || call.phone_number || "Unknown lead";
+    const summary = call.summary && call.summary.trim()
+      ? call.summary
+      : '<span class="empty">No summary yet</span>';
+
+    return `
+      <div class="card" data-call-id="${escapeAttr(call.vapi_call_id)}">
+        <div class="card-top">
+          <div>
+            <div class="lead-name">${escapeHtml(name)}</div>
+            <div class="phone">${escapeHtml(call.phone_number || "")}</div>
+          </div>
+          <div class="badges">
+            <span class="badge status">${escapeHtml(call.status || "unknown")}</span>
+            ${call.interest_level ? `<span class="badge ${interestBadgeClass(call.interest_level)}">${escapeHtml(call.interest_level)}</span>` : ""}
+            <button class="delete-btn" data-delete-id="${escapeAttr(call.vapi_call_id)}" title="Delete this call">&times;</button>
+          </div>
+        </div>
+
+        <div class="summary">${summary}</div>
+
+        ${call.recording_url ? `<audio controls src="${escapeAttr(call.recording_url)}"></audio>` : ""}
+
+        ${call.transcript ? `
+          <details>
+            <summary>View transcript</summary>
+            <div class="transcript">${escapeHtml(call.transcript)}</div>
+          </details>
+        ` : ""}
+
+        <div class="meta-row">
+          <span>${call.duration_seconds ? call.duration_seconds + "s" : ""}</span>
+          <span>${call.created_at ? new Date(call.created_at).toLocaleString() : ""}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+  function escapeAttr(str) {
+    return String(str).replace(/"/g, "&quot;");
+  }
+
+  async function loadCalls() {
+    const backendUrl = getBackendUrl();
+    statusLine.textContent = "Loading…";
+    try {
+      const res = await fetch(`${backendUrl}/calls`);
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      const calls = await res.json();
+
+      if (!calls.length) {
+        callsEl.innerHTML = "";
+        statusLine.innerHTML = "";
+        callsEl.innerHTML = `<div class="empty-state">No calls yet.</div>`;
+        return;
+      }
+
+      callsEl.innerHTML = calls.map(renderCall).join("");
+      statusLine.textContent = `${calls.length} call(s) — last refreshed ${new Date().toLocaleTimeString()}`;
+    } catch (err) {
+      statusLine.textContent = `Could not load calls: ${err.message}`;
+      callsEl.innerHTML = "";
+    }
+  }
+
+  callsEl.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".delete-btn");
+    if (!btn) return;
+    const callId = btn.dataset.deleteId;
+    if (!confirm("Delete this call record? This cannot be undone.")) return;
+
+    const backendUrl = getBackendUrl();
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${backendUrl}/calls/${callId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      await loadCalls();
+    } catch (err) {
+      alert("Could not delete call: " + err.message);
+      btn.disabled = false;
+    }
+  });
+
+  // After a call ends, Vapi can take a little while to finish uploading the
+  // transcript/recording, so we poll a few times instead of refreshing once.
+  function pollAfterCallEnd() {
+    let attempts = 0;
+    const maxAttempts = 5;
+    const interval = setInterval(() => {
+      attempts++;
+      loadCalls();
+      loadUsage();
+      if (attempts >= maxAttempts) clearInterval(interval);
+    }, 4000);
+  }
+
+  const usageSpentEl = document.getElementById("usage-spent");
+  const usageBudgetEl = document.getElementById("usage-budget");
+  const usageFillEl = document.getElementById("usage-fill");
+
+  usageBudgetEl.value = localStorage.getItem("usageBudget") || "10";
+  usageBudgetEl.addEventListener("change", () => {
+    localStorage.setItem("usageBudget", usageBudgetEl.value);
+    loadUsage();
+  });
+
+  async function loadUsage() {
+    const backendUrl = getBackendUrl();
+    try {
+      const res = await fetch(`${backendUrl}/usage`);
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      const data = await res.json();
+      const budget = parseFloat(usageBudgetEl.value) || 10;
+      const spent = data.total_cost || 0;
+      const pct = Math.min(100, (spent / budget) * 100);
+
+      usageSpentEl.textContent = spent.toFixed(2);
+      usageFillEl.style.width = pct + "%";
+      usageFillEl.classList.remove("warn", "danger");
+      if (pct >= 90) usageFillEl.classList.add("danger");
+      else if (pct >= 60) usageFillEl.classList.add("warn");
+    } catch (err) {
+      usageSpentEl.textContent = "?";
+    }
+  }
+
+  const promptText = document.getElementById("prompt-text");
+  const promptSaveBtn = document.getElementById("prompt-save-btn");
+  const promptStatus = document.getElementById("prompt-status");
+
+  async function loadPrompt() {
+    const backendUrl = getBackendUrl();
+    try {
+      const res = await fetch(`${backendUrl}/assistant/prompt`);
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      const data = await res.json();
+      promptText.value = data.prompt || "";
+    } catch (err) {
+      promptText.placeholder = "Could not load prompt: " + err.message;
+    }
+  }
+
+  promptSaveBtn.addEventListener("click", async () => {
+    const backendUrl = getBackendUrl();
+    const newPrompt = promptText.value.trim();
+    if (!newPrompt) {
+      promptStatus.textContent = "Prompt can't be empty.";
+      return;
+    }
+    promptSaveBtn.disabled = true;
+    promptStatus.textContent = "Saving…";
+    try {
+      const res = await fetch(`${backendUrl}/assistant/prompt`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: newPrompt }),
+      });
+      if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+      promptStatus.textContent = "Saved! The agent will use this from the next call.";
+    } catch (err) {
+      promptStatus.textContent = "Could not save: " + err.message;
+    } finally {
+      promptSaveBtn.disabled = false;
+    }
+  });
+
+  loadCalls();
+  loadUsage();
+  loadPrompt();
+</script>
+
+</body>
+</html>
