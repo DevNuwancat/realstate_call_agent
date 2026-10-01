@@ -32,6 +32,8 @@ button{font-family:inherit;color:inherit}
 /* ---------- sidebar (desktop) ---------- */
 .side{width:232px;flex:none;padding:20px 14px;display:flex;flex-direction:column;gap:6px;border-right:1px solid rgba(255,255,255,.05)}
 .brand{display:flex;align-items:center;gap:10px;padding:4px 10px 22px;font-weight:600;font-size:15px;line-height:1.2}
+.bt{display:flex;flex-direction:column;line-height:1.2}
+.bt .sub{font-weight:500;font-size:12.5px;color:var(--muted2);letter-spacing:.02em}
 .logo{width:30px;height:30px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:var(--bg);font-size:14px;font-weight:700;flex:none}
 .nav{padding:11px 12px;border-radius:12px;font-size:14px;color:var(--muted2);cursor:pointer;border:0;background:none;text-align:left;width:100%}
 .nav:hover{background:#141415;color:var(--text)}
@@ -274,7 +276,7 @@ button{font-family:inherit;color:inherit}
 <div class="topbar" id="topbar"><i></i></div>
 <div class="app">
   <aside class="side">
-    <div class="brand"><div class="logo">R</div>Real Estate Call Agent</div>
+    <div class="brand"><div class="logo">R</div><div class="bt"><span>Real Estate</span><span class="sub">Call Agent</span></div></div>
     <button class="nav active" id="nav-dash">Dashboard</button>
     <button class="nav" id="nav-script">Agent script</button>
     <button class="nav" id="nav-refresh">Refresh data</button>
@@ -289,7 +291,7 @@ button{font-family:inherit;color:inherit}
 
   <main class="main" id="main">
     <div class="mbar">
-      <div class="brand"><div class="logo">R</div>Real Estate Call Agent</div>
+      <div class="brand"><div class="logo">R</div><div class="bt"><span>Real Estate</span><span class="sub">Call Agent</span></div></div>
       <div class="srv" id="srv-chip"><span class="dot" id="srv-dot-m"></span><span id="srv-label-m">Checking…</span></div>
     </div>
 
