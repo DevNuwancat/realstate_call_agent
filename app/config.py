@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Remaining credit = credit_balance - spend since then.
     credit_balance: float | None = None
     credit_balance_spend_at: float = 0.0
+    # Preferred: the moment (UTC, e.g. 2026-10-01T09:00:00Z) you read credit_balance in Vapi.
+    # Spend since then is summed from Vapi's own call list, so nothing is missed.
+    credit_balance_at: str | None = None
 
     @property
     def allowed_origins_list(self) -> list[str]:

@@ -102,3 +102,33 @@ async def get_call(vapi_call_id: str) -> dict:
         )
         resp.raise_for_status()
         return resp.json()
+
+
+async def spend_since(iso_time: str) -> float:
+    """Total cost of every call Vapi has recorded since `iso_time`, straight from Vapi.
+    Cached for 30s so dashboard refreshes don't hammer the API."""
+    import time
+    cached = _SPEND_CACHE.get(iso_time)
+    if cached and time.time() - cached[0] < 30:
+        return cached[1]
+    total, cursor = 0.0, iso_time
+    async with httpx.AsyncClient(timeout=30) as client:
+        for _ in range(20):                       # at most 20 pages of 1000 calls
+            resp = await client.get(
+                f"{VAPI_BASE_URL}/call",
+                headers=_auth_headers(),
+                params={"createdAtGt": cursor, "limit": 1000},
+            )
+            resp.raise_for_status()
+            calls = resp.json()
+            if not calls:
+                break
+            total += sum((c.get("cost") or 0) for c in calls)
+            if len(calls) < 1000:
+                break
+            cursor = max(c["createdAt"] for c in calls)
+    _SPEND_CACHE[iso_time] = (time.time(), total)
+    return total
+
+
+_SPEND_CACHE: dict[str, tuple[float, float]] = {}

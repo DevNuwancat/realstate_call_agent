@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.models import StartCallRequest, TemplateIn
 from app.supabase_client import supabase
-from app.vapi_client import start_outbound_call, get_system_prompt, set_system_prompt, get_call as fetch_vapi_call
+from app.vapi_client import start_outbound_call, get_system_prompt, set_system_prompt, get_call as fetch_vapi_call, spend_since
 
 app = FastAPI(title="Real Estate Call Agent API")
 
@@ -299,7 +299,14 @@ async def usage_summary():
             call_count += 1
     credit_remaining = None
     if settings.credit_balance is not None:
-        spent_since = max(0.0, total_cost - settings.credit_balance_spend_at)
+        spent_since = None
+        if settings.credit_balance_at:
+            try:
+                spent_since = await spend_since(settings.credit_balance_at)
+            except Exception:
+                spent_since = None                # fall back to the stored-calls estimate below
+        if spent_since is None:
+            spent_since = max(0.0, total_cost - settings.credit_balance_spend_at)
         credit_remaining = round(max(0.0, settings.credit_balance - spent_since), 2)
     return {
         "total_cost": round(total_cost, 4),
