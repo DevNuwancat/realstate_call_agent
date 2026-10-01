@@ -187,7 +187,7 @@ async def usage_summary():
 async def list_calls(limit: int = 50):
     result = (
         supabase.table("calls")
-        .select("id,vapi_call_id,phone_number,lead_name,status,interest_level,summary,transcript,duration_seconds,created_at")
+        .select("id,vapi_call_id,phone_number,lead_name,status,interest_level,summary,transcript,duration_seconds,created_at,updated_at")
         .order("created_at", desc=True)
         .limit(limit)
         .execute()
@@ -202,9 +202,9 @@ async def call_media(vapi_call_id: str):
     try:
         data = await fetch_vapi_call(vapi_call_id)
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail="Could not load call from Vapi")
+        raise HTTPException(status_code=e.response.status_code, detail="Could not load the call recording")
     except httpx.HTTPError:
-        raise HTTPException(status_code=502, detail="Vapi is unreachable")
+        raise HTTPException(status_code=502, detail="The recording service is unreachable")
 
     artifact = data.get("artifact") or {}
     recording_url = (
