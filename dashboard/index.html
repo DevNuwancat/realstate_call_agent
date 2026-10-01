@@ -133,10 +133,14 @@ button{font-family:inherit;color:inherit}
 .scrim{position:fixed;inset:0;background:rgba(5,5,6,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:10}
 .panel{position:fixed;top:12px;right:12px;bottom:12px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:24px;z-index:11;display:flex;flex-direction:column;animation:slide .4s cubic-bezier(.3,.8,.3,1);overflow:hidden}
 .panel.drawer{width:480px}
-.panel.prompt{width:460px;padding:26px;gap:14px}
+.panel.prompt{width:460px;padding:26px;gap:14px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.panel.prompt>*{flex-shrink:0}
+.fld{display:flex;flex-direction:column;gap:6px;flex:none}
+.fld>label{font-size:12px;font-weight:600;color:var(--text);letter-spacing:.01em}
+.fld>small{font-size:11.5px;color:var(--muted);line-height:1.45}
 .panel.prompt h3{margin:0;font-size:20px;font-weight:500;letter-spacing:-0.02em}
 .panel.prompt p{margin:0;font-size:13px;color:var(--muted)}
-.panel.prompt textarea{flex:1;min-height:200px;border:1px solid var(--line);background:var(--card2);border-radius:16px;padding:16px;font:13px/1.65 var(--mono);color:var(--text);resize:none;outline:none}
+.panel.prompt textarea{flex:none;min-height:340px;border:1px solid var(--line);background:var(--card2);border-radius:16px;padding:16px;font:13px/1.65 var(--mono);color:var(--text);resize:none;outline:none}
 .panel.prompt textarea:focus{border-color:rgba(255,107,61,.5)}
 .tpl-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;flex:none;-webkit-overflow-scrolling:touch}
 .tpl{border:0;border-radius:999px;padding:8px 14px;font:500 12px 'DM Sans';background:var(--chip);color:var(--muted2);white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:7px;flex:none}
@@ -816,11 +820,10 @@ button{font-family:inherit;color:inherit}
       '<div class="panel prompt" role="dialog" aria-label="Agent script"><div style="display:flex;align-items:center;gap:12px"><h3 style="flex:1">Agent script</h3><button class="xbtn" data-close aria-label="Close">✕</button></div>' +
       "<p>Pick a template or write your own. The one marked with a green dot is the script the agent uses for new calls.</p>" +
       '<div class="tpl-row" id="tpl-row"><div class="shim" style="height:34px;width:140px;border-radius:999px"></div></div>' +
-      '<input class="tpl-name" id="tpl-name" placeholder="Template name" maxlength="80" disabled>' +
-      '<input class="tpl-name" id="tpl-agent" placeholder="Agent name (e.g. Noor)" maxlength="40" disabled>' +
-      '<textarea id="tpl-first" class="tpl-first" placeholder="First message the agent says when the call is answered" maxlength="1000" disabled></textarea>' +
-      '<div class="tpl-status">Tip: type {{agent_name}} to insert the agent’s name, and {{lead_name}} for the lead’s name — in the first message or the script.</div>' +
-      '<textarea id="prompt-text" placeholder="Loading…" disabled></textarea>' +
+      '<div class="fld"><label for="tpl-name">Template name</label><small>Only for you, to tell templates apart. Callers never hear it.</small><input class="tpl-name" id="tpl-name" placeholder="e.g. Villa leads – July" maxlength="80" disabled></div>' +
+      '<div class="fld"><label for="tpl-agent">Agent name</label><small>The name the agent uses for itself. It replaces {{agent_name}} in the first message and script.</small><input class="tpl-name" id="tpl-agent" placeholder="e.g. Noor" maxlength="40" disabled></div>' +
+      '<div class="fld"><label for="tpl-first">First message</label><small>The first thing the agent says when the call is answered. Use {{agent_name}} and {{lead_name}} as tags.</small><textarea id="tpl-first" class="tpl-first" placeholder="Hi {{lead_name}}, this is {{agent_name}}…" maxlength="1000" disabled></textarea></div>' +
+      '<div class="fld"><label for="prompt-text">Script (agent instructions)</label><small>How the agent behaves for the whole call: goals, questions, tone, when to hang up.</small><textarea id="prompt-text" placeholder="Loading…" disabled></textarea></div>' +
       '<div class="tpl-status" id="tpl-status"></div>' +
       '<div class="msg-note" id="prompt-note"></div>' +
       '<div class="tpl-actions"><button class="btn-wide btn-sec" id="tpl-save" disabled>Save template</button><button class="btn-wide" id="tpl-use" disabled>Use for calls</button></div>' +
