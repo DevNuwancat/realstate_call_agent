@@ -280,7 +280,7 @@ button{font-family:inherit;color:inherit}
         <h1 id="greeting">Hello</h1>
         <div class="date" id="date-line">—</div>
       </div>
-      <div class="pill">Spend <b id="spend">$0.00</b></div>
+      <div class="pill" id="spend-pill"><span id="spend-label">Spend</span> <b id="spend">$0.00</b></div>
       <button class="btn-ghost only-mobile" id="btn-script-m">Agent script</button>
       <button class="btn-ghost" id="btn-refresh"><span id="spin-ico">↻</span>Refresh</button>
       <button class="btn-primary" id="btn-talk">● Talk to agent</button>
@@ -339,7 +339,7 @@ button{font-family:inherit;color:inherit}
 
   /* ================= state ================= */
   var S = {
-    calls: [], loaded: false, loadError: "", spend: 0,
+    calls: [], loaded: false, loadError: "", spend: 0, credit: null,
     filter: "all", hoverDay: null,
     server: "checking", latency: null, wakeSince: 0,
     syncedAt: null, refreshing: false,
@@ -443,7 +443,7 @@ button{font-family:inherit;color:inherit}
         api("/usage").catch(function () { return null; })
       ]);
       S.calls = results[0];
-      if (results[1]) S.spend = results[1].total_cost || 0;
+      if (results[1]) { S.spend = results[1].total_cost || 0; S.credit = results[1].credit_remaining; }
       S.loadError = ""; S.loaded = true; S.syncedAt = new Date(); S.lastLoad = Date.now();
       if (S.server !== "online") { S.server = "online"; renderServer(); }
     } catch (e) {
@@ -467,7 +467,10 @@ button{font-family:inherit;color:inherit}
     $("greeting").textContent = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
     var d = new Date().toLocaleDateString([], { weekday: "short", day: "numeric", month: "short", year: "numeric" });
     $("date-line").textContent = d + " · synced " + (S.syncedAt ? S.syncedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "never");
-    $("spend").textContent = "$" + S.spend.toFixed(2);
+    var hasCredit = typeof S.credit === "number";
+    $("spend-label").textContent = hasCredit ? "Credit left" : "Spend";
+    $("spend").textContent = "$" + (hasCredit ? S.credit : S.spend).toFixed(2);
+    $("spend-pill").title = "Spent on calls so far: $" + S.spend.toFixed(2);
   }
 
   function renderKpis() {

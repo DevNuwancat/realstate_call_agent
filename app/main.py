@@ -180,7 +180,15 @@ async def usage_summary():
         if isinstance(cost, (int, float)):
             total_cost += cost
             call_count += 1
-    return {"total_cost": round(total_cost, 4), "calls_counted": call_count}
+    credit_remaining = None
+    if settings.credit_balance is not None:
+        spent_since = max(0.0, total_cost - settings.credit_balance_spend_at)
+        credit_remaining = round(max(0.0, settings.credit_balance - spent_since), 2)
+    return {
+        "total_cost": round(total_cost, 4),
+        "calls_counted": call_count,
+        "credit_remaining": credit_remaining,
+    }
 
 
 @app.get("/calls")

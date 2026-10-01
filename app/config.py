@@ -14,6 +14,12 @@ class Settings(BaseSettings):
 
     allowed_origins: str = "*"
 
+    # Vapi has no balance API, so we remember the balance you read from its dashboard
+    # (credit_balance) and the tracked spend at that moment (credit_balance_spend_at).
+    # Remaining credit = credit_balance - spend since then.
+    credit_balance: float | None = None
+    credit_balance_spend_at: float = 0.0
+
     @property
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
