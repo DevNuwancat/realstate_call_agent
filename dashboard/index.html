@@ -516,9 +516,24 @@
     }
   });
 
-  loadCalls();
-  loadUsage();
-  loadPrompt();
+  // Render's free plan sleeps when idle. Ping /health first so the server
+  // wakes up, and tell the user why the page is slow instead of looking broken.
+  async function wakeServerThenLoad() {
+    const slowTimer = setTimeout(() => {
+      statusLine.textContent = "Waking up the server… this can take up to a minute on the free plan.";
+    }, 3000);
+    try {
+      await fetch(`${getBackendUrl()}/health`);
+    } catch (err) {
+      // loadCalls below will show the real error message
+    }
+    clearTimeout(slowTimer);
+    loadCalls();
+    loadUsage();
+    loadPrompt();
+  }
+
+  wakeServerThenLoad();
 </script>
 
 </body>
