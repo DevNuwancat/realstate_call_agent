@@ -137,7 +137,15 @@ button{font-family:inherit;color:inherit}
 .panel.prompt>*{flex-shrink:0}
 .fld{display:flex;flex-direction:column;gap:6px;flex:none}
 .fld>label{font-size:12px;font-weight:600;color:var(--text);letter-spacing:.01em}
-.fld>small{font-size:11.5px;color:var(--muted);line-height:1.45}
+.fld{position:relative}
+.fld>label{display:flex;align-items:center;gap:8px}
+.info{width:18px;height:18px;border-radius:50%;border:1px solid var(--muted);background:transparent;color:var(--muted);font:600 11px 'DM Sans';line-height:1;padding:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.info:hover,.info.on{color:var(--text);border-color:var(--text)}
+.tip{font-size:12.5px;line-height:1.5;color:var(--muted2);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.tip b{color:var(--accent);font-weight:600}
+.mention{position:absolute;left:14px;z-index:6;min-width:170px;background:var(--card2);border:1px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5);padding:5px}
+.mention button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--text);font:500 13px 'DM Sans';padding:8px 10px;border-radius:8px;cursor:pointer}
+.mention button.on,.mention button:hover{background:var(--chip)}
 .panel.prompt h3{margin:0;font-size:20px;font-weight:500;letter-spacing:-0.02em}
 .panel.prompt p{margin:0;font-size:13px;color:var(--muted)}
 .panel.prompt textarea{flex:none;min-height:340px;border:1px solid var(--line);background:var(--card2);border-radius:16px;padding:16px;font:13px/1.65 var(--mono);color:var(--text);resize:none;outline:none}
@@ -763,6 +771,42 @@ button{font-family:inherit;color:inherit}
   var P = { list: [], sel: null, busy: false };   // sel = template id, or null while writing a new one
   var NEW_TEXT = "You are a friendly assistant making a short phone call.\n\nGoals:\n1. \n2. \n\nStyle: short sentences, never pushy. If the person isn’t interested, thank them politely and end the call.";
 
+  var TAGS = [["@Agent name", "{{agent_name}}"], ["@Lead name", "{{lead_name}}"]];
+  function toUi(t) { TAGS.forEach(function (g) { t = t.split(g[1]).join(g[0]); t = t.split(g[1].replace("{{", "{{ ").replace("}}", " }}")).join(g[0]); }); return t; }
+  function fromUi(t) { TAGS.forEach(function (g) { t = t.split(g[0]).join(g[1]); }); return t; }
+
+  // Typing "@" in a box opens a small menu to insert the agent / lead name.
+  function attachMention(ta) {
+    var box = document.createElement("div"); box.className = "mention"; box.hidden = true; ta.parentNode.appendChild(box);
+    var items = [], idx = 0, start = -1;
+    function close() { box.hidden = true; start = -1; }
+    function pick(i) {
+      var tag = items[i]; if (!tag) return;
+      var end = ta.selectionStart;
+      ta.value = ta.value.slice(0, start) + tag[0] + " " + ta.value.slice(end);
+      var pos = start + tag[0].length + 1; ta.setSelectionRange(pos, pos); ta.focus(); close();
+    }
+    function draw() { box.innerHTML = items.map(function (g, i) { return '<button type="button" data-i="' + i + '" class="' + (i === idx ? "on" : "") + '">' + g[0] + "</button>"; }).join(""); }
+    ta.addEventListener("input", function () {
+      var m = /@([A-Za-z ]{0,10})$/.exec(ta.value.slice(0, ta.selectionStart));
+      if (!m) return close();
+      var q = m[1].toLowerCase();
+      items = TAGS.filter(function (g) { return g[0].toLowerCase().slice(1).indexOf(q) === 0; });
+      if (!items.length) return close();
+      start = ta.selectionStart - m[0].length; idx = 0; draw();
+      box.style.top = (ta.offsetTop + 44) + "px"; box.hidden = false;
+    });
+    ta.addEventListener("keydown", function (e) {
+      if (box.hidden) return;
+      if (e.key === "ArrowDown") { idx = (idx + 1) % items.length; draw(); e.preventDefault(); }
+      else if (e.key === "ArrowUp") { idx = (idx + items.length - 1) % items.length; draw(); e.preventDefault(); }
+      else if (e.key === "Enter" || e.key === "Tab") { pick(idx); e.preventDefault(); }
+      else if (e.key === "Escape") { close(); e.stopPropagation(); e.preventDefault(); }
+    });
+    ta.addEventListener("blur", function () { setTimeout(close, 150); });
+    box.addEventListener("mousedown", function (e) { var b = e.target.closest("button"); if (b) { e.preventDefault(); pick(+b.dataset.i); } });
+  }
+
   function tplById(id) { return P.list.filter(function (t) { return t.id === id; })[0]; }
   function tplNote(msg, kind) { var n = $("prompt-note"); if (n) { n.textContent = msg || ""; n.className = "msg-note" + (kind ? " " + kind : ""); } }
 
@@ -786,9 +830,9 @@ button{font-family:inherit;color:inherit}
     P.sel = id;
     var t = tplById(id);
     $("tpl-name").value = t ? t.name : "";
-    $("prompt-text").value = t ? t.prompt : NEW_TEXT;
+    $("prompt-text").value = t ? toUi(t.prompt) : NEW_TEXT;
     $("tpl-agent").value = t ? (t.agent_name || "Noor") : "Noor";
-    $("tpl-first").value = t ? (t.first_message || "") : "Hi {{lead_name}}, this is {{agent_name}} calling about the property you enquired about — do you have a couple of minutes to chat?";
+    $("tpl-first").value = t ? toUi(t.first_message || "") : "Hi @Lead name, this is @Agent name calling about the property you enquired about — do you have a couple of minutes to chat?";
     tplNote("");
     renderTemplates();
   }
@@ -800,10 +844,10 @@ button{font-family:inherit;color:inherit}
 
   // Saves the editor (create or update). Returns the saved template.
   async function saveTemplate() {
-    var name = $("tpl-name").value.trim(), prompt = $("prompt-text").value.trim();
+    var name = $("tpl-name").value.trim(), prompt = fromUi($("prompt-text").value.trim());
     if (!name) throw new Error("Give the template a name.");
     if (!prompt) throw new Error("The script can’t be empty.");
-    var body = JSON.stringify({ name: name, prompt: prompt, first_message: $("tpl-first").value.trim(), agent_name: $("tpl-agent").value.trim() || "Noor" }), h = { "Content-Type": "application/json" };
+    var body = JSON.stringify({ name: name, prompt: prompt, first_message: fromUi($("tpl-first").value.trim()), agent_name: $("tpl-agent").value.trim() || "Noor" }), h = { "Content-Type": "application/json" };
     var saved = P.sel === null
       ? await api("/templates", { method: "POST", headers: h, body: body })
       : await api("/templates/" + encodeURIComponent(P.sel), { method: "PUT", headers: h, body: body });
@@ -820,10 +864,10 @@ button{font-family:inherit;color:inherit}
       '<div class="panel prompt" role="dialog" aria-label="Agent script"><div style="display:flex;align-items:center;gap:12px"><h3 style="flex:1">Agent script</h3><button class="xbtn" data-close aria-label="Close">✕</button></div>' +
       "<p>Pick a template or write your own. The one marked with a green dot is the script the agent uses for new calls.</p>" +
       '<div class="tpl-row" id="tpl-row"><div class="shim" style="height:34px;width:140px;border-radius:999px"></div></div>' +
-      '<div class="fld"><label for="tpl-name">Template name</label><small>Only for you, to tell templates apart. Callers never hear it.</small><input class="tpl-name" id="tpl-name" placeholder="e.g. Villa leads – July" maxlength="80" disabled></div>' +
-      '<div class="fld"><label for="tpl-agent">Agent name</label><small>The name the agent uses for itself. It replaces {{agent_name}} in the first message and script.</small><input class="tpl-name" id="tpl-agent" placeholder="e.g. Noor" maxlength="40" disabled></div>' +
-      '<div class="fld"><label for="tpl-first">First message</label><small>The first thing the agent says when the call is answered. Use {{agent_name}} and {{lead_name}} as tags.</small><textarea id="tpl-first" class="tpl-first" placeholder="Hi {{lead_name}}, this is {{agent_name}}…" maxlength="1000" disabled></textarea></div>' +
-      '<div class="fld"><label for="prompt-text">Script (agent instructions)</label><small>How the agent behaves for the whole call: goals, questions, tone, when to hang up.</small><textarea id="prompt-text" placeholder="Loading…" disabled></textarea></div>' +
+      '<div class="fld"><label for="tpl-name">Template name</label><input class="tpl-name" id="tpl-name" placeholder="e.g. Villa leads – July" maxlength="80" disabled></div>' +
+      '<div class="fld"><label for="tpl-agent">Agent name</label><input class="tpl-name" id="tpl-agent" placeholder="e.g. Noor" maxlength="40" disabled></div>' +
+      '<div class="fld"><label for="tpl-first">First message <button type="button" class="info" id="tpl-info" aria-label="How it works">!</button></label><div class="tip" id="tpl-tip" hidden>Type <b>@</b> to insert the <b>Agent name</b> or the <b>Lead name</b>. They’re filled in automatically on every call.</div><textarea id="tpl-first" class="tpl-first" placeholder="Hi @Lead name, this is @Agent name…" maxlength="1000" disabled></textarea></div>' +
+      '<div class="fld"><label for="prompt-text">Script</label><textarea id="prompt-text" placeholder="Loading…" disabled></textarea></div>' +
       '<div class="tpl-status" id="tpl-status"></div>' +
       '<div class="msg-note" id="prompt-note"></div>' +
       '<div class="tpl-actions"><button class="btn-wide btn-sec" id="tpl-save" disabled>Save template</button><button class="btn-wide" id="tpl-use" disabled>Use for calls</button></div>' +
@@ -837,6 +881,8 @@ button{font-family:inherit;color:inherit}
       return;
     }
     var active = P.list.filter(function (t) { return t.active; })[0] || P.list[0];
+    attachMention($("tpl-first")); attachMention($("prompt-text"));
+    $("tpl-info").onclick = function () { var t = $("tpl-tip"); t.hidden = !t.hidden; this.classList.toggle("on", !t.hidden); };
     $("tpl-name").disabled = false; $("prompt-text").disabled = false; $("tpl-agent").disabled = false; $("tpl-first").disabled = false;
     ["tpl-save", "tpl-use"].forEach(function (id) { $(id).disabled = false; });
     showTemplate(active ? active.id : null);
