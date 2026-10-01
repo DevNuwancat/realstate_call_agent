@@ -90,3 +90,15 @@ async def set_system_prompt(new_prompt: str) -> dict:
         )
         resp.raise_for_status()
         return resp.json()
+
+
+async def get_call(vapi_call_id: str) -> dict:
+    """Fetch one call from Vapi. Each fetch returns freshly signed recording
+    URLs, so we use this instead of the (expiring) URL saved at call end."""
+    async with httpx.AsyncClient(timeout=20) as client:
+        resp = await client.get(
+            f"{VAPI_BASE_URL}/call/{vapi_call_id}",
+            headers=_auth_headers(),
+        )
+        resp.raise_for_status()
+        return resp.json()

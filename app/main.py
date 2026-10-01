@@ -2,13 +2,14 @@ import hmac
 import hashlib
 from datetime import datetime, timezone
 
+import httpx
 from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.models import StartCallRequest
 from app.supabase_client import supabase
-from app.vapi_client import start_outbound_call, get_system_prompt, set_system_prompt
+from app.vapi_client import start_outbound_call, get_system_prompt, set_system_prompt, get_call as fetch_vapi_call
 
 app = FastAPI(title="Real Estate Call Agent API")
 
@@ -70,6 +71,28 @@ def _verify_signature(raw_body: bytes, signature_header: str | None) -> None:
         raise HTTPException(status_code=401, detail="Invalid signature")
 
 
+INTEREST_LEVELS = {"hot", "warm", "cold", "not-interested"}
+
+
+def _extract_interest(message: dict) -> str | None:
+    """Vapi puts the extracted interest level in one of two places depending on
+    whether the old 'structured data' or the new 'Structured Outputs' feature is used."""
+    analysis = message.get("analysis") or {}
+    structured = analysis.get("structuredData")
+    candidates = []
+    if isinstance(structured, dict):
+        candidates.append(structured.get("interest_level"))
+    outputs = (message.get("artifact") or {}).get("structuredOutputs") or {}
+    if isinstance(outputs, dict):
+        for item in outputs.values():
+            if isinstance(item, dict) and item.get("name") == "interest_level":
+                candidates.append(item.get("result"))
+    for value in candidates:
+        if isinstance(value, str) and value.strip().lower() in INTEREST_LEVELS:
+            return value.strip().lower()
+    return None
+
+
 @app.post("/webhooks/vapi")
 async def vapi_webhook(request: Request, x_vapi_signature: str | None = Header(default=None)):
     raw_body = await request.body()
@@ -96,7 +119,8 @@ async def vapi_webhook(request: Request, x_vapi_signature: str | None = Header(d
 
     elif msg_type == "end-of-call-report":
         update["status"] = "completed"
-        update["summary"] = message.get("summary")
+        analysis = message.get("analysis") or {}
+        update["summary"] = message.get("summary") or analysis.get("summary")
         update["transcript"] = message.get("transcript")
         artifact = message.get("artifact", {}) or {}
         update["recording_url"] = (
@@ -108,12 +132,9 @@ async def vapi_webhook(request: Request, x_vapi_signature: str | None = Header(d
         duration = message.get("durationSeconds")
         update["duration_seconds"] = round(duration) if duration is not None else None
         update["raw_payload"] = message
-        # If you configure Vapi's structured-data extraction to pull an
-        # "interest_level" field from the conversation, it shows up here:
-        analysis = message.get("analysis", {})
-        structured = analysis.get("structuredData", {})
-        if isinstance(structured, dict) and "interest_level" in structured:
-            update["interest_level"] = structured["interest_level"]
+        interest = _extract_interest(message)
+        if interest:
+            update["interest_level"] = interest
 
     else:
         # Log anything else (function-call, transcript deltas, etc.) for now.
@@ -166,12 +187,41 @@ async def usage_summary():
 async def list_calls(limit: int = 50):
     result = (
         supabase.table("calls")
-        .select("*")
+        .select("id,vapi_call_id,phone_number,lead_name,status,interest_level,summary,transcript,duration_seconds,created_at")
         .order("created_at", desc=True)
         .limit(limit)
         .execute()
     )
     return result.data
+
+
+@app.get("/calls/{vapi_call_id}/media")
+async def call_media(vapi_call_id: str):
+    """Fresh recording link + timestamped transcript lines, fetched live from Vapi
+    (the link saved when the call ended expires after about 30 minutes)."""
+    try:
+        data = await fetch_vapi_call(vapi_call_id)
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail="Could not load call from Vapi")
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Vapi is unreachable")
+
+    artifact = data.get("artifact") or {}
+    recording_url = (
+        artifact.get("presignedMonoUrl")
+        or artifact.get("presignedStereoUrl")
+        or artifact.get("recordingUrl")
+    )
+    lines = []
+    for m in artifact.get("messages") or []:
+        role, text = m.get("role"), (m.get("message") or "").strip()
+        if role in ("bot", "user") and text:
+            lines.append({
+                "who": "agent" if role == "bot" else "lead",
+                "text": text,
+                "start": m.get("secondsFromStart"),
+            })
+    return {"recording_url": recording_url, "lines": lines}
 
 
 @app.get("/calls/{vapi_call_id}")
