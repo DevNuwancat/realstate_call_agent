@@ -141,8 +141,8 @@ button{font-family:inherit;color:inherit}
 .fld>label{display:flex;align-items:center;gap:8px}
 .info{width:18px;height:18px;border-radius:50%;border:1px solid var(--muted);background:transparent;color:var(--muted);font:600 11px 'DM Sans';line-height:1;padding:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .info:hover,.info.on{color:var(--text);border-color:var(--text)}
-.tip{font-size:12.5px;line-height:1.5;color:var(--muted2);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
-.tip b{color:var(--accent);font-weight:600}
+.fld-tip{font-size:12.5px;line-height:1.5;color:var(--muted2);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.fld-tip b{color:var(--accent);font-weight:600}
 .mention{position:absolute;left:14px;z-index:6;min-width:170px;background:var(--card2);border:1px solid rgba(255,255,255,.14);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.5);padding:5px}
 .mention button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--text);font:500 13px 'DM Sans';padding:8px 10px;border-radius:8px;cursor:pointer}
 .mention button.on,.mention button:hover{background:var(--chip)}
@@ -866,7 +866,7 @@ button{font-family:inherit;color:inherit}
       '<div class="tpl-row" id="tpl-row"><div class="shim" style="height:34px;width:140px;border-radius:999px"></div></div>' +
       '<div class="fld"><label for="tpl-name">Template name</label><input class="tpl-name" id="tpl-name" placeholder="e.g. Villa leads – July" maxlength="80" disabled></div>' +
       '<div class="fld"><label for="tpl-agent">Agent name</label><input class="tpl-name" id="tpl-agent" placeholder="e.g. Noor" maxlength="40" disabled></div>' +
-      '<div class="fld"><label for="tpl-first">First message <button type="button" class="info" id="tpl-info" aria-label="How it works">!</button></label><div class="tip" id="tpl-tip" hidden>Type <b>@</b> to insert the <b>Agent name</b> or the <b>Lead name</b>. They’re filled in automatically on every call.</div><textarea id="tpl-first" class="tpl-first" placeholder="Hi @Lead name, this is @Agent name…" maxlength="1000" disabled></textarea></div>' +
+      '<div class="fld"><label for="tpl-first">First message <button type="button" class="info" id="tpl-info" aria-label="How it works">!</button></label><div class="fld-tip" id="tpl-tip" hidden>Type <b>@</b> to insert the <b>Agent name</b> or the <b>Lead name</b>. They’re filled in automatically on every call.</div><textarea id="tpl-first" class="tpl-first" placeholder="Hi @Lead name, this is @Agent name…" maxlength="1000" disabled></textarea></div>' +
       '<div class="fld"><label for="prompt-text">Script</label><textarea id="prompt-text" placeholder="Loading…" disabled></textarea></div>' +
       '<div class="tpl-status" id="tpl-status"></div>' +
       '<div class="msg-note" id="prompt-note"></div>' +
