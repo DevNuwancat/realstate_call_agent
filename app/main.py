@@ -93,6 +93,18 @@ def _extract_interest(message: dict) -> str | None:
     return None
 
 
+def _extract_output(message: dict, name: str) -> str | None:
+    """Read one Structured Output field (e.g. 'call_summary') from the end-of-call report."""
+    outputs = (message.get("artifact") or {}).get("structuredOutputs") or {}
+    if isinstance(outputs, dict):
+        for item in outputs.values():
+            if isinstance(item, dict) and item.get("name") == name:
+                value = item.get("result")
+                if isinstance(value, str) and value.strip():
+                    return value.strip()
+    return None
+
+
 @app.post("/webhooks/vapi")
 async def vapi_webhook(request: Request, x_vapi_signature: str | None = Header(default=None)):
     raw_body = await request.body()
@@ -120,7 +132,11 @@ async def vapi_webhook(request: Request, x_vapi_signature: str | None = Header(d
     elif msg_type == "end-of-call-report":
         update["status"] = "completed"
         analysis = message.get("analysis") or {}
-        update["summary"] = message.get("summary") or analysis.get("summary")
+        update["summary"] = (
+            message.get("summary")
+            or analysis.get("summary")
+            or _extract_output(message, "call_summary")
+        )
         update["transcript"] = message.get("transcript")
         artifact = message.get("artifact", {}) or {}
         update["recording_url"] = (
