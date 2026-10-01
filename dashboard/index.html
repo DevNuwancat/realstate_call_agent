@@ -175,34 +175,37 @@ button{font-family:inherit;color:inherit}
 
 /* ---------- talk stage ---------- */
 .stage-wrap{position:fixed;inset:0;background:rgba(5,5,6,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:grid;place-items:center;animation:pop .3s ease both;z-index:20}
-.stage{width:960px;max-width:94vw;height:600px;max-height:92vh;background:#121213;border:1px solid rgba(255,255,255,.08);border-radius:28px;display:grid;grid-template-columns:minmax(0,1fr) 380px;overflow:hidden;position:relative;box-shadow:0 40px 120px rgba(0,0,0,.6)}
-.stage .xbtn{position:absolute;top:16px;right:16px;z-index:2}
-.orbside{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px;transition:background .8s}
+.stage{width:520px;max-width:94vw;height:620px;max-height:92vh;background:#121213;border:1px solid rgba(255,255,255,.08);border-radius:28px;overflow:hidden;position:relative;box-shadow:0 40px 120px rgba(0,0,0,.6)}
+.stage .xbtn{position:absolute;top:16px;right:16px;z-index:3}
+.orbside{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px}
+.glow{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s}
+.glow.go{background:radial-gradient(circle at 50% 38%,rgba(255,107,61,.22),transparent 60%)}
+.glow.gg{background:radial-gradient(circle at 50% 38%,rgba(62,207,142,.24),transparent 60%)}
 .orbbox{position:relative;width:260px;height:260px;display:grid;place-items:center;flex:none}
-.ring{position:absolute;width:120px;height:120px;border-radius:50%;border:1.5px solid var(--accent);animation:ripple 3s ease-out infinite}
-.bub{position:absolute;border-radius:50%;background:var(--accent);transition:all .35s ease-out}
-.orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff9a78,#ff6b3d 55%,#c8431c);transition:transform .12s ease-out;box-shadow:0 0 70px rgba(255,107,61,.45);display:grid;place-items:center;font-size:30px;color:var(--bg);font-weight:600}
-.stat{text-align:center}
-.stat .s{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:500}
+.ring{position:absolute;width:120px;height:120px;border-radius:50%;border:1.5px solid var(--accent);animation:ripple 3s ease-out infinite;transition:border-color .35s,opacity .35s}
+.bub{position:absolute;border-radius:50%;background:var(--accent);transition:background-color .35s,opacity .35s}
+.orbbox.g .ring{border-color:var(--green)} .orbbox.g .bub{background:var(--green)}
+.orbbox.off .ring{opacity:0;animation:none}
+.orb{position:relative;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff9a78,#ff6b3d 55%,#c8431c);transition:transform .12s ease-out,box-shadow .4s;box-shadow:0 0 70px rgba(255,107,61,.45);display:grid;place-items:center;font-size:30px;color:var(--bg);font-weight:600}
+.orb .og{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,#9af2c6,#3ecf8e 55%,#1d9a66);opacity:0;transition:opacity .35s}
+.orb .ot{position:relative}
+.orbbox.g .orb{box-shadow:0 0 70px rgba(62,207,142,.5)}
+.stat{text-align:center;min-height:74px}
+.stat .s{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:500;transition:color .35s}
 .stat .n{font:500 22px var(--mono);margin-top:8px}
 .stat .t{font:13px var(--mono);color:var(--muted);margin-top:6px;min-height:18px}
+.steps{display:flex;flex-direction:column;gap:10px;width:260px;margin-top:2px}
+.step{display:flex;align-items:center;gap:12px;font-size:13.5px;color:var(--dim);transition:color .3s}
+.step i{width:18px;height:18px;border-radius:50%;border:2px solid #3a3a3d;flex:none;display:grid;place-items:center;font-size:11px;font-style:normal;line-height:1}
+.step.run{color:var(--text)} .step.run i{border-color:var(--accent);border-right-color:transparent;animation:spin .8s linear infinite}
+.step.done{color:var(--muted2)} .step.done i{border-color:var(--green);background:var(--green);color:var(--bg)} .step.done i:before{content:"✓";font-weight:700}
 .btn-end{border:0;background:var(--red);color:#fff;border-radius:999px;padding:12px 28px;font:600 14px 'DM Sans';cursor:pointer;animation:rise .3s ease both}
 .btn-start{border:0;background:var(--accent);color:var(--bg);border-radius:999px;padding:13px 32px;font:600 15px 'DM Sans';cursor:pointer;animation:rise .3s ease both}
 .btn-start:hover{background:var(--accent-hover)}
 .hint{font-size:12px;color:var(--muted);text-align:center;max-width:300px;line-height:1.5}
 .hint.err{color:var(--red)}
-.chatside{border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
-.chat-head{padding:22px 24px 14px}
-.chat-head .lab{font-size:11px;letter-spacing:.1em;color:var(--muted)}
-.chat-head .big{font-size:17px;font-weight:500;margin-top:6px;letter-spacing:-0.01em}
-.chat-head .small{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}
-.chat{flex:1;overflow:auto;padding:12px 24px 18px;display:flex;flex-direction:column;gap:10px}
-.bubble{max-width:86%;animation:rise .4s ease both}
-.bubble .who{font-size:11px;color:var(--dim);margin:0 6px 4px}
-.bubble .tx{padding:10px 14px;border-radius:16px;font-size:13.5px;line-height:1.45}
-.bubble.a{align-self:flex-start} .bubble.a .tx{background:#1d1d1f;color:var(--text)}
-.bubble.l{align-self:flex-end} .bubble.l .who{text-align:right} .bubble.l .tx{background:var(--accent);color:var(--bg)}
-.chat .ph{margin:auto;color:var(--dim);font-size:13px;text-align:center}
+.rowc.hl{background:rgba(255,107,61,.12);box-shadow:inset 3px 0 0 var(--accent);animation:hlfade 4.5s ease forwards}
+@keyframes hlfade{0%,70%{background:rgba(255,107,61,.14)}100%{background:transparent;box-shadow:inset 3px 0 0 transparent}}
 
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d1d1f;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:10px 18px;font-size:13px;z-index:40;animation:rise .3s ease both;max-width:90vw}
 
@@ -243,11 +246,9 @@ button{font-family:inherit;color:inherit}
   .d-head{padding:max(20px,env(safe-area-inset-top)) 18px 14px}
   .player{margin:0 18px} .sec{padding:14px 18px 0} .lines{padding:14px 18px 10px} .d-foot{padding:10px 18px max(18px,env(safe-area-inset-bottom))}
   .stage-wrap{display:block}
-  .stage{width:100%;max-width:100%;height:100dvh;max-height:100dvh;border-radius:0;border:0;grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
-  .orbside{padding:max(56px,calc(env(safe-area-inset-top) + 40px)) 16px 16px;gap:12px}
-  .orbbox{width:200px;height:200px;transform:scale(.78);margin:-24px 0}
-  .chatside{border-left:0;border-top:1px solid var(--line)}
-  .chat-head{padding:14px 18px 8px} .chat{padding:8px 18px max(18px,env(safe-area-inset-bottom))}
+  .stage{width:100%;max-width:100%;height:100dvh;max-height:100dvh;border-radius:0;border:0}
+  .orbside{padding:max(56px,calc(env(safe-area-inset-top) + 40px)) 16px max(24px,env(safe-area-inset-bottom));gap:10px}
+  .orbbox{width:220px;height:220px;transform:scale(.84);margin:-10px 0}
 }
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
@@ -583,7 +584,7 @@ button{font-family:inherit;color:inherit}
     el.innerHTML = list.map(function (c, i) {
       var l = lv(c), proc = isProcessing(c);
       var chip = proc ? '<span class="verdict proc">' + procLabel(c) + "…</span>" : '<span class="verdict" style="background:' + l.bg + ";color:" + l.color + '">' + l.label + "</span>";
-      return '<div class="cols rowc" data-open="' + esc(c.vapi_call_id) + '" style="' + (S.rowsShown ? "animation:none" : "animation-delay:" + Math.min(i, 8) * 40 + "ms") + '">' +
+      return '<div class="cols rowc' + (c.vapi_call_id === S.highlightId ? " hl" : "") + '" data-open="' + esc(c.vapi_call_id) + '" style="' + (S.rowsShown && c.vapi_call_id !== S.highlightId ? "animation:none" : "animation-delay:" + Math.min(i, 8) * 40 + "ms") + '">' +
         '<div class="c-name name">' + esc(callName(c)) + "</div>" +
         '<div class="c-num mono">' + esc(callNumber(c)) + "</div>" +
         '<div class="c-when soft">' + esc(whenText(c.created_at)) + "</div>" +
@@ -767,65 +768,78 @@ button{font-family:inherit;color:inherit}
   }
 
   /* ================= talk stage ================= */
-  var T = { vapi: null, phase: "setup", secs: 0, clock: null, level: 0, speaker: null, lines: [], err: "", partial: {}, tick: 0, anim: null };
+  var T = { vapi: null, phase: "setup", secs: 0, clock: null, level: 0, speaker: null, leadUntil: 0, err: "", tick: 0, anim: null, known: {}, steps: [] };
+  var STEP_TEXT = ["Call ended", "Saving the recording and transcript", "Writing the summary", "Rating the lead’s interest"];
+  var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 
-  function stageHtml() {
-    var ph = T.phase, active = ph === "waking" || ph === "connecting" || ph === "live";
-    var stMap = { setup: "READY", waking: "WAKING SERVER", connecting: "CONNECTING", live: T.speaker === "agent" ? "AGENT SPEAKING" : T.speaker === "lead" ? "LISTENING" : "CONNECTED", analyzing: "ANALYZING CALL" };
-    var msgs = ["Saving the recording…", "Writing the transcript…", "Summarizing the conversation…", "Rating the lead’s interest…", "Almost there…"];
-    var timer = ph === "live" ? fmt(T.secs) : ph === "waking" ? "Starting the service, up to a minute" : ph === "analyzing" ? msgs[Math.min(msgs.length - 1, Math.floor(T.tick * 0.15 / 5))] : ph === "connecting" ? "Connecting…" : "";
-    var lvl = ph === "live" ? Math.max(T.level, T.speaker ? 0.15 : 0) : 0.12;
-    var glow = active ? (0.1 + lvl * 0.14).toFixed(2) : "0.05";
-    var rings = active ? [0, 1, 2].map(function (i) { return '<div class="ring" style="animation-delay:' + i + 's"></div>'; }).join("") : "";
-    var bubs = "";
-    if (active) for (var i = 0; i < 8; i++) {
-      var ang = i * 0.785 + T.tick * 0.025 * (i % 2 ? 1 : -1), r = 92 + 14 * Math.sin(T.tick * 0.15 + i) + lvl * 26, sz = (7 + (i % 3) * 5) * (0.7 + lvl);
-      bubs += '<div class="bub" style="left:' + (130 + Math.cos(ang) * r - sz / 2) + "px;top:" + (130 + Math.sin(ang) * r - sz / 2) + "px;width:" + sz + "px;height:" + sz + "px;opacity:" + (0.25 + lvl * 0.5).toFixed(2) + '"></div>';
-    }
-    var scale = ph === "live" ? 1 + lvl * 0.25 : 1 + 0.03 * Math.sin(T.tick * 0.2);
-    var action = ph === "analyzing" ? '<div class="bar indet" style="width:200px"><i></i></div>' : ph === "setup" ? '<button class="btn-start" id="stage-start">Start call</button>' : ph === "live" || ph === "connecting" || ph === "waking" ? '<button class="btn-end" id="stage-end">' + (ph === "live" ? "End call" : "Cancel") + "</button>" : "";
+  function orbMarkup() {
+    var rings = "", bubs = "";
+    for (var i = 0; i < 3; i++) rings += '<div class="ring" style="animation-delay:' + i + 's"></div>';
+    for (var k = 0; k < 8; k++) bubs += '<div class="bub" data-b="' + k + '"></div>';
+    return '<div class="orbbox off" id="orbbox">' + rings + bubs + '<div class="orb" id="orb"><span class="og" id="orb-g"></span><span class="ot" id="orb-t">A</span></div></div>';
+  }
+
+  function stageSig() { return T.phase + "|" + T.err + "|" + T.steps.join(","); }
+
+  function buildStage() {
+    var side = $("orbside"); if (!side) return;
+    var ph = T.phase;
+    var action = ph === "setup" ? '<button class="btn-start" id="stage-start">Start call</button>'
+      : (ph === "live" || ph === "connecting" || ph === "waking") ? '<button class="btn-end" id="stage-end">' + (ph === "live" ? "End call" : "Cancel") + "</button>" : "";
+    var steps = (ph === "analyzing" || ph === "done") ? '<div class="steps">' + STEP_TEXT.map(function (t, n) {
+      return '<div class="step ' + (T.steps[n] || "pend") + '"><i></i>' + t + "</div>";
+    }).join("") + "</div>" : "";
     var hint = T.err ? '<div class="hint err">' + esc(T.err) + "</div>" : ph === "setup" ? '<div class="hint">Talk to the agent right in your browser. Allow microphone access when asked.</div>' : "";
-    var chat = T.lines.length ? T.lines.map(function (l) {
-      var a = l.who === "agent";
-      return '<div class="bubble ' + (a ? "a" : "l") + '"><div class="who">' + (a ? "Agent" : "You") + '</div><div class="tx">' + esc(l.text) + "</div></div>";
-    }).join("") : '<div class="ph">' + (ph === "live" ? "Say hello — the live transcript will appear here." : "The live transcript will appear here.") + "</div>";
-    return { timer: timer, orb: { glow: glow, html:
-      '<div class="orbbox">' + rings + bubs + '<div class="orb" style="transform:scale(' + scale + ')">A</div></div>' +
-      '<div class="stat"><div class="s">' + stMap[ph] + '</div><div class="n">Browser call</div><div class="t">' + esc(timer) + "</div></div>" + action + hint }, chat: chat };
+    side.innerHTML = '<div class="glow go" id="glow-o"></div><div class="glow gg" id="glow-g"></div>' + orbMarkup() +
+      '<div class="stat"><div class="s" id="st-label"></div><div class="n">Browser call</div><div class="t" id="st-t"></div></div>' + steps + action + hint;
+    side.dataset.sig = stageSig();
+    var s1 = $("stage-start"), e1 = $("stage-end");
+    if (s1) s1.onclick = startTalk;
+    if (e1) e1.onclick = endTalk;
+  }
+
+  // Runs every 150ms: moves the ball, bubbles and glow; swaps colour (green = agent speaking, orange = you).
+  function animateOrb() {
+    var side = $("orbside"); if (!side) return;
+    if (side.dataset.sig !== stageSig()) buildStage();
+    var ph = T.phase, now = Date.now();
+    if (T.speaker === "lead" && now > T.leadUntil) T.speaker = null;
+    var active = ph === "waking" || ph === "connecting" || ph === "live" || ph === "analyzing";
+    var green = ph === "done" || (ph === "live" && T.speaker === "agent");
+    var lvl = 0.12;
+    if (ph === "live") lvl = T.speaker === "agent" ? Math.max(T.level, 0.28) : T.speaker === "lead" ? 0.3 + 0.2 * Math.abs(Math.sin(T.tick * 0.55)) : 0.1;
+    else if (ph === "analyzing") lvl = 0.2 + 0.08 * Math.sin(T.tick * 0.4);
+    else if (ph === "done") lvl = 0.3;
+
+    var box = $("orbbox"); if (!box) return;
+    box.className = "orbbox" + (green ? " g" : "") + (active || ph === "done" ? "" : " off");
+    var bubs = box.querySelectorAll(".bub");
+    for (var i = 0; i < bubs.length; i++) {
+      var ang = i * 0.785 + T.tick * 0.025 * (i % 2 ? 1 : -1), r = 92 + 14 * Math.sin(T.tick * 0.15 + i) + lvl * 26, sz = (7 + (i % 3) * 5) * (0.7 + lvl);
+      var st = bubs[i].style;
+      st.left = (130 + Math.cos(ang) * r - sz / 2) + "px"; st.top = (130 + Math.sin(ang) * r - sz / 2) + "px";
+      st.width = st.height = sz + "px"; st.opacity = (active || ph === "done") ? (0.25 + lvl * 0.5).toFixed(2) : "0";
+    }
+    $("orb").style.transform = "scale(" + (active ? 1 + lvl * 0.25 : 1 + 0.03 * Math.sin(T.tick * 0.2)) + ")";
+    $("orb-g").style.opacity = green ? 1 : 0;
+    $("orb-t").textContent = ph === "done" ? "✓" : "A";
+    $("glow-o").style.opacity = active && !green ? 1 : 0.35;
+    $("glow-g").style.opacity = green ? 1 : 0;
+
+    var lab = { setup: "READY", waking: "STARTING THE SERVICE", connecting: "CONNECTING", analyzing: "ANALYZING YOUR CALL", done: "ALL DONE" }[ph];
+    if (ph === "live") lab = T.speaker === "agent" ? "AGENT SPEAKING" : T.speaker === "lead" ? "YOU’RE SPEAKING" : "CONNECTED";
+    var l = $("st-label"); l.textContent = lab; l.style.color = green ? "var(--green)" : "var(--accent)";
+    var timer = ph === "live" ? fmt(T.secs) : ph === "waking" ? "This can take up to a minute" : ph === "analyzing" ? "This usually takes a few seconds" : ph === "done" ? "Opening your call log…" : "";
+    var t = $("st-t"); if (t.textContent !== timer) t.textContent = timer;
   }
 
   function openStage() {
     stopAudio(); S.openCallId = null; S.promptOpen = false; S.stageOpen = true;
-    T.phase = "setup"; T.secs = 0; T.level = 0; T.speaker = null; T.lines = []; T.err = ""; T.partial = {};
-    root.innerHTML =
-      '<div class="stage-wrap"><div class="stage" role="dialog" aria-label="Talk to the agent"><button class="xbtn" id="stage-x" aria-label="Close">✕</button>' +
-      '<div class="orbside" id="orbside"></div>' +
-      '<div class="chatside"><div class="chat-head"><div class="lab">LIVE TRANSCRIPT</div><div class="big">Real estate interest call</div><div class="small">The interest level is worked out after you hang up.</div></div><div class="chat" id="chat"></div></div></div></div>';
-    paintStage(true);
+    T.phase = "setup"; T.secs = 0; T.level = 0; T.speaker = null; T.err = ""; T.steps = [];
+    root.innerHTML = '<div class="stage-wrap"><div class="stage" role="dialog" aria-label="Talk to the agent"><button class="xbtn" id="stage-x" aria-label="Close">✕</button><div class="orbside" id="orbside"></div></div></div>';
+    buildStage(); animateOrb();
     clearInterval(T.anim);
-    T.anim = setInterval(function () { T.tick++; if (T.level > 0) T.level *= 0.9; paintStage(false); }, 150);
-  }
-
-  var lastChatSig = "";
-  function paintStage(force) {
-    var side = $("orbside"); if (!side) return;
-    var v = stageHtml();
-    side.style.background = "radial-gradient(circle at 50% 42%,rgba(255,107,61," + v.orb.glow + "),transparent 62%)";
-    // Only rebuild the buttons when the phase/error changes, so clicks never get lost mid-animation.
-    var sig = T.phase + "|" + T.err + "|" + T.speaker;
-    if (force || side.dataset.sig !== sig) { side.innerHTML = v.orb.html; side.dataset.sig = sig; bindStage(); }
-    else {
-      var box = side.querySelector(".orbbox"); if (box) box.outerHTML = v.orb.html.split('<div class="stat">')[0];
-      var t = side.querySelector(".stat .t"); if (t && t.textContent !== v.timer) t.textContent = v.timer;
-    }
-    var chat = $("chat"), csig = T.lines.length + ":" + T.phase;
-    if (chat && csig !== lastChatSig) { lastChatSig = csig; chat.innerHTML = v.chat; chat.scrollTop = chat.scrollHeight; }
-  }
-
-  function bindStage() {
-    var s = $("stage-start"), e = $("stage-end");
-    if (s) s.onclick = startTalk;
-    if (e) e.onclick = endTalk;
+    T.anim = setInterval(function () { T.tick++; if (T.level > 0) T.level *= 0.88; animateOrb(); }, 150);
   }
 
   function closeStage() {
@@ -835,16 +849,16 @@ button{font-family:inherit;color:inherit}
   }
 
   async function startTalk() {
-    T.err = ""; T.lines = []; T.secs = 0; T.speaker = null;
-    // Make sure the free-tier backend is awake first, otherwise Vapi's end-of-call webhook can time out.
+    T.err = ""; T.secs = 0; T.speaker = null;
+    // Make sure the host is awake first, otherwise the end-of-call report can time out and the call isn't saved.
     if (S.server !== "online") {
-      T.phase = "waking"; paintStage(true);
+      T.phase = "waking";
       var ok = await pingServer();
       if (!S.stageOpen) return;
-      if (!ok) { T.phase = "setup"; T.err = "The service is still starting up, so the call can’t be saved yet. Please try again in a minute."; paintStage(true); return; }
+      if (!ok) { T.phase = "setup"; T.err = "The service is still starting up, so the call can’t be saved yet. Please try again in a minute."; return; }
     }
     T.known = {}; S.calls.forEach(function (c) { T.known[c.vapi_call_id] = true; });
-    T.phase = "connecting"; paintStage(true);
+    T.phase = "connecting";
     try {
       if (!T.vapi) {
         var mod = await import(VAPI_SDK_URL);
@@ -855,57 +869,82 @@ button{font-family:inherit;color:inherit}
       if (!S.stageOpen) return;
       await T.vapi.start(VAPI_ASSISTANT_ID);
     } catch (e) {
-      T.phase = "setup"; console.warn(e); T.err = (e && e.name === "NotAllowedError") ? "Microphone access was blocked. Allow it in your browser and try again." : "Could not start the call. Check your microphone and connection, then try again.";
-      paintStage(true);
+      console.warn(e); T.phase = "setup";
+      T.err = (e && e.name === "NotAllowedError") ? "Microphone access was blocked. Allow it in your browser and try again." : "Could not start the call. Check your microphone and connection, then try again.";
     }
   }
 
   function wireVapi(v) {
     v.on("call-start", function () {
       T.phase = "live"; T.secs = 0; clearInterval(T.clock);
-      T.clock = setInterval(function () { T.secs++; }, 1000); paintStage(true);
+      T.clock = setInterval(function () { T.secs++; }, 1000);
     });
     v.on("volume-level", function (lvl) { T.level = Math.max(T.level, Math.min(1, lvl * 1.6)); });
     v.on("speech-start", function () { T.speaker = "agent"; });
-    v.on("speech-end", function () { T.speaker = "lead"; });
+    v.on("speech-end", function () { if (T.speaker === "agent") T.speaker = null; });
     v.on("message", function (m) {
-      if (m && m.type === "transcript" && m.transcriptType === "final" && m.transcript) {
-        T.lines.push({ who: m.role === "assistant" ? "agent" : "lead", text: m.transcript });
+      if (!m) return;
+      if (m.type === "speech-update") {
+        var who = m.role === "assistant" ? "agent" : "lead";
+        if (m.status === "started") { T.speaker = who; T.leadUntil = who === "lead" ? Date.now() + 8000 : 0; }
+        else if (T.speaker === who) T.speaker = null;
+      } else if (m.type === "transcript" && m.role === "user") {
+        T.speaker = "lead"; T.leadUntil = Date.now() + 1500;
       }
     });
     v.on("call-end", function () {
       clearInterval(T.clock);
       if (!S.stageOpen) return;
-      T.phase = "analyzing"; T.speaker = null; paintStage(true);
+      T.speaker = null;
       afterCall();
     });
     v.on("error", function (e) {
       if (!S.stageOpen) return;
-      var msg = (e && (e.errorMsg || e.message || (e.error && e.error.message))) || "";
-      if (T.phase === "live") return;           // ignore noisy errors while a call is running
-      console.warn("call error", msg, e); T.phase = "setup"; T.err = "The call couldn’t be completed. Please try again."; paintStage(true);
+      if (T.phase === "live" || T.phase === "analyzing") return;           // ignore noisy errors during a call
+      console.warn("call error", e); T.phase = "setup"; T.err = "The call couldn’t be completed. Please try again.";
     });
   }
 
   function endTalk() {
     if (T.phase === "live" || T.phase === "connecting") { try { T.vapi && T.vapi.stop(); } catch (e) {} }
-    if (T.phase === "waking" || T.phase === "connecting") { T.phase = "setup"; paintStage(true); }
+    if (T.phase === "waking" || T.phase === "connecting") T.phase = "setup";
   }
 
-  // After hang-up the call takes a few seconds to be saved. Wait for the new call to show up, then open it.
-  // Its rating and summary may still be processing; the panel fills them in on its own.
+  // After hang-up: show a checklist while the call is saved, summarised and rated. Each tick of the list
+  // reflects what is really in the database, then we close the window and highlight the new call in the log.
   async function afterCall() {
-    var found = null;
-    for (var i = 0; i < 15; i++) {
-      await new Promise(function (r) { setTimeout(r, 4000); });
+    T.phase = "analyzing"; T.steps = ["done", "run", "pend", "pend"];
+    var t0 = Date.now(), found = null, completedAt = 0, finished = false;
+    while (S.stageOpen && Date.now() - t0 < 90000 && !finished) {
+      await sleep(3000);
       if (!S.stageOpen) return;
       await loadData(true);
       found = S.calls.filter(function (c) { return !T.known[c.vapi_call_id]; })[0] || null;
-      if (found && found.status === "completed") break;
+      var st = ["done", "run", "pend", "pend"];
+      if (found && found.status === "completed") {
+        if (!completedAt) completedAt = Date.now();
+        var since = Date.now() - completedAt, hasInt = !!found.interest_level, hasSum = !!found.summary;
+        st[1] = "done";
+        st[2] = (hasSum || hasInt || since > 20000) ? "done" : "run";
+        st[3] = st[2] === "done" ? "run" : "pend";
+        if (hasInt || since > 45000) { st = ["done", "done", "done", "done"]; finished = true; }
+      }
+      T.steps = st;
     }
-    if (S.stageOpen) closeStage();
-    if (found) { toast("Call saved"); openCall(found.vapi_call_id, false); }
-    else toast("Call finished — it’s still being processed. It will appear shortly.");
+    if (!S.stageOpen) return;
+    if (!found) { closeStage(); toast("Your call is still being processed. It will appear shortly."); return; }
+    T.phase = "done"; T.steps = ["done", "done", "done", "done"];
+    await sleep(1400);
+    if (!S.stageOpen) return;
+    closeStage();
+    highlightCall(found.vapi_call_id);
+  }
+
+  function highlightCall(id) {
+    S.highlightId = id; S.rowsShown = true; S.filter = "all"; renderFilters(); renderRows();
+    var el = document.querySelector('[data-open="' + id + '"]');
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(function () { S.highlightId = null; var e2 = document.querySelector('[data-open="' + id + '"]'); if (e2) e2.classList.remove("hl"); }, 4600);
   }
 
   /* ================= events ================= */
