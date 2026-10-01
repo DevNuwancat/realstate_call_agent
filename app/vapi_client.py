@@ -61,26 +61,6 @@ async def get_system_prompt() -> str:
         return ""
 
 
-async def get_backchanneling() -> bool:
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.get(
-            f"{VAPI_BASE_URL}/assistant/{settings.vapi_assistant_id}",
-            headers=_auth_headers(),
-        )
-        resp.raise_for_status()
-        return bool(resp.json().get("backchannelingEnabled"))
-
-
-async def set_backchanneling(enabled: bool) -> None:
-    async with httpx.AsyncClient(timeout=15) as client:
-        resp = await client.patch(
-            f"{VAPI_BASE_URL}/assistant/{settings.vapi_assistant_id}",
-            headers=_auth_headers(),
-            json={"backchannelingEnabled": enabled},
-        )
-        resp.raise_for_status()
-
-
 async def get_first_message() -> str:
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(
