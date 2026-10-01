@@ -61,7 +61,24 @@ async def get_system_prompt() -> str:
         return ""
 
 
-async def set_system_prompt(new_prompt: str) -> dict:
+async def get_first_message() -> str:
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.get(
+            f"{VAPI_BASE_URL}/assistant/{settings.vapi_assistant_id}",
+            headers=_auth_headers(),
+        )
+        resp.raise_for_status()
+        return resp.json().get("firstMessage") or ""
+
+
+def fill_agent_name(text: str, agent_name: str) -> str:
+    """Swap the {{agent_name}} tag for the agent's real name."""
+    name = (agent_name or "").strip() or "Noor"
+    return text.replace("{{agent_name}}", name).replace("{{ agent_name }}", name)
+
+
+async def set_system_prompt(new_prompt: str, first_message: str | None = None) -> dict:
+    # `first_message` empty/None leaves the assistant's current first message alone.
     # Vapi expects the full `model` object on update, so we fetch the
     # current one first and only swap out the system message content —
     # this avoids accidentally wiping the model/provider settings.
@@ -86,7 +103,7 @@ async def set_system_prompt(new_prompt: str) -> dict:
         resp = await client.patch(
             f"{VAPI_BASE_URL}/assistant/{settings.vapi_assistant_id}",
             headers=_auth_headers(),
-            json={"model": model},
+            json={"model": model, **({"firstMessage": first_message} if first_message else {})},
         )
         resp.raise_for_status()
         return resp.json()

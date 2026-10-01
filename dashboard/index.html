@@ -147,6 +147,7 @@ button{font-family:inherit;color:inherit}
 .tpl.add.on{background:rgba(255,107,61,.14)}
 .tpl-name{border:1px solid var(--line);background:var(--card2);border-radius:14px;padding:12px 16px;font:500 14px 'DM Sans';color:var(--text);outline:none;flex:none}
 .tpl-name:focus{border-color:rgba(255,107,61,.5)}
+.panel.prompt textarea.tpl-first{min-height:0;flex:none;font:500 14px 'DM Sans';border:1px solid var(--line);background:var(--card2);border-radius:14px;padding:12px 16px;font:500 14px 'DM Sans';color:var(--text);outline:none;flex:none;height:76px;resize:none}
 .tpl-status{font-size:12px;color:var(--muted);flex:none;display:flex;align-items:center;gap:7px}
 .tpl-status.live{color:var(--green)}
 .tpl-actions{display:flex;gap:10px;flex:none}
@@ -782,6 +783,8 @@ button{font-family:inherit;color:inherit}
     var t = tplById(id);
     $("tpl-name").value = t ? t.name : "";
     $("prompt-text").value = t ? t.prompt : NEW_TEXT;
+    $("tpl-agent").value = t ? (t.agent_name || "Noor") : "Noor";
+    $("tpl-first").value = t ? (t.first_message || "") : "Hi {{lead_name}}, this is {{agent_name}} calling about the property you enquired about — do you have a couple of minutes to chat?";
     tplNote("");
     renderTemplates();
   }
@@ -796,7 +799,7 @@ button{font-family:inherit;color:inherit}
     var name = $("tpl-name").value.trim(), prompt = $("prompt-text").value.trim();
     if (!name) throw new Error("Give the template a name.");
     if (!prompt) throw new Error("The script can’t be empty.");
-    var body = JSON.stringify({ name: name, prompt: prompt }), h = { "Content-Type": "application/json" };
+    var body = JSON.stringify({ name: name, prompt: prompt, first_message: $("tpl-first").value.trim(), agent_name: $("tpl-agent").value.trim() || "Noor" }), h = { "Content-Type": "application/json" };
     var saved = P.sel === null
       ? await api("/templates", { method: "POST", headers: h, body: body })
       : await api("/templates/" + encodeURIComponent(P.sel), { method: "PUT", headers: h, body: body });
@@ -814,6 +817,9 @@ button{font-family:inherit;color:inherit}
       "<p>Pick a template or write your own. The one marked with a green dot is the script the agent uses for new calls.</p>" +
       '<div class="tpl-row" id="tpl-row"><div class="shim" style="height:34px;width:140px;border-radius:999px"></div></div>' +
       '<input class="tpl-name" id="tpl-name" placeholder="Template name" maxlength="80" disabled>' +
+      '<input class="tpl-name" id="tpl-agent" placeholder="Agent name (e.g. Noor)" maxlength="40" disabled>' +
+      '<textarea id="tpl-first" class="tpl-first" placeholder="First message the agent says when the call is answered" maxlength="1000" disabled></textarea>' +
+      '<div class="tpl-status">Tip: type {{agent_name}} to insert the agent’s name, and {{lead_name}} for the lead’s name — in the first message or the script.</div>' +
       '<textarea id="prompt-text" placeholder="Loading…" disabled></textarea>' +
       '<div class="tpl-status" id="tpl-status"></div>' +
       '<div class="msg-note" id="prompt-note"></div>' +
@@ -828,7 +834,7 @@ button{font-family:inherit;color:inherit}
       return;
     }
     var active = P.list.filter(function (t) { return t.active; })[0] || P.list[0];
-    $("tpl-name").disabled = false; $("prompt-text").disabled = false;
+    $("tpl-name").disabled = false; $("prompt-text").disabled = false; $("tpl-agent").disabled = false; $("tpl-first").disabled = false;
     ["tpl-save", "tpl-use"].forEach(function (id) { $(id).disabled = false; });
     showTemplate(active ? active.id : null);
 

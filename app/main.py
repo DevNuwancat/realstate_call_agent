@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.models import StartCallRequest, TemplateIn
 from app.supabase_client import supabase
-from app.vapi_client import start_outbound_call, get_system_prompt, set_system_prompt, get_call as fetch_vapi_call, spend_since
+from app.vapi_client import start_outbound_call, get_system_prompt, get_first_message, set_system_prompt, fill_agent_name, get_call as fetch_vapi_call, spend_since
 
 app = FastAPI(title="Real Estate Call Agent API")
 
@@ -207,7 +207,11 @@ async def list_templates():
                 current = await get_system_prompt()
             except httpx.HTTPError:
                 raise HTTPException(status_code=502, detail="Could not read the current script")
-            _templates().insert({"name": "Default template", "prompt": current or " ", "active": True}).execute()
+            try:
+                first = await get_first_message()
+            except httpx.HTTPError:
+                first = ""
+            _templates().insert({"name": "Default template", "prompt": current or " ", "first_message": first, "active": True}).execute()
             rows = _templates().select("*").order("created_at").execute().data
         return rows
     except HTTPException:
@@ -219,7 +223,13 @@ async def list_templates():
 @app.post("/templates")
 async def create_template(body: TemplateIn):
     try:
-        res = _templates().insert({"name": body.name.strip(), "prompt": body.prompt, "active": False}).execute()
+        res = _templates().insert({
+            "name": body.name.strip(),
+            "prompt": body.prompt,
+            "first_message": body.first_message.strip(),
+            "agent_name": body.agent_name.strip() or "Noor",
+            "active": False,
+        }).execute()
         return res.data[0]
     except Exception:
         raise _db_failure()
@@ -231,6 +241,8 @@ async def update_template(template_id: str, body: TemplateIn):
         res = _templates().update({
             "name": body.name.strip(),
             "prompt": body.prompt,
+            "first_message": body.first_message.strip(),
+            "agent_name": body.agent_name.strip() or "Noor",
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }).eq("id", template_id).execute()
     except Exception:
@@ -241,7 +253,10 @@ async def update_template(template_id: str, body: TemplateIn):
     if row.get("active"):
         # Editing the live template changes the live script too.
         try:
-            await set_system_prompt(body.prompt)
+            await set_system_prompt(
+                fill_agent_name(body.prompt, row["agent_name"]),
+                fill_agent_name(row["first_message"], row["agent_name"]),
+            )
         except httpx.HTTPError:
             raise HTTPException(status_code=502, detail="Saved, but could not update the live agent")
     return row
@@ -256,7 +271,10 @@ async def activate_template(template_id: str):
     if not found:
         raise HTTPException(status_code=404, detail="Template not found")
     try:
-        await set_system_prompt(found[0]["prompt"])      # update the agent first; only then flip the flags
+        await set_system_prompt(
+            fill_agent_name(found[0]["prompt"], found[0].get("agent_name")),
+            fill_agent_name(found[0].get("first_message") or "", found[0].get("agent_name")),
+        )      # update the agent first; only then flip the flags
     except httpx.HTTPError:
         raise HTTPException(status_code=502, detail="Could not update the agent")
     try:

@@ -22,9 +22,16 @@ create table if not exists script_templates (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   prompt text not null,
+  first_message text not null default '',
+  agent_name text not null default 'Noor',
   active boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 alter table script_templates enable row level security;
+
+
+-- Migration for an existing script_templates table (run once in Supabase):
+-- alter table script_templates add column if not exists first_message text not null default '';
+-- alter table script_templates add column if not exists agent_name text not null default 'Noor';
